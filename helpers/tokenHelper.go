@@ -3,7 +3,7 @@ package helper
 import (
 	"context"
 	"fmt"
-	"golang-restaurant-management/database"
+	"golang-ai-management/database"
 	"log"
 	"os"
 	"time"

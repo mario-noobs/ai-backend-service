@@ -3,9 +3,9 @@ package controller
 import (
 	"context"
 	"fmt"
-	"golang-restaurant-management/database"
-	helper "golang-restaurant-management/helpers"
-	"golang-restaurant-management/models"
+	"golang-ai-management/database"
+	helper "golang-ai-management/helpers"
+	"golang-ai-management/models"
 	"log"
 	"net/http"
 	"strconv"

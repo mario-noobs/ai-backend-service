@@ -1,7 +1,7 @@
 package routes
 
 import (
-	controller "golang-restaurant-management/controllers"
+	controller "golang-ai-management/controllers"
 
 	"github.com/gin-gonic/gin"
 )

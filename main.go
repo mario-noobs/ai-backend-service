@@ -1,9 +1,10 @@
 package main
 
 import (
+	"log/slog"
 	"os"
 
-	routes "golang-restaurant-management/routes"
+	routes "golang-ai-management/routes"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,12 +21,13 @@ func main() {
 	routes.UserRoutes(router)
 	//router.Use(middleware.Authentication())
 
-	routes.FoodRoutes(router)
+	routes.FaceRegRoutes(router)
 	//routes.MenuRoutes(router)
 	//routes.TableRoutes(router)
 	//routes.OrderRoutes(router)
 	//routes.OrderItemRoutes(router)
 	//routes.InvoiceRoutes(router)
 
+	slog.Info("Server is running in port 8000")
 	router.Run(":" + port)
 }

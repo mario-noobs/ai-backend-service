@@ -1,4 +1,4 @@
-module golang-restaurant-management
+module golang-ai-management
 
 go 1.16
 
