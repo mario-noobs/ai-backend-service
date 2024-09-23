@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	helper "golang-ai-management/helpers"
 	"golang-ai-management/models"
 	"golang-ai-management/models/basicModel"
-	"io/ioutil"
-	"net/http"
 )
 
 type FaceService interface {
@@ -17,6 +16,7 @@ type FaceService interface {
 }
 
 type MarioFaceService struct {
+	config MarioFaceServiceConfig
 }
 
 type userNames struct {
@@ -25,32 +25,16 @@ type userNames struct {
 
 // ListIdentities returns a list of identities.
 func (s *MarioFaceService) ListIdentities() ([]string, error) {
-	// Define the API endpoint
-	url := "http://75.119.149.223:5000/face/get-list"
-
-	// Make the GET request
-	resp, err := http.Get(url)
+	var config = LoadMarioFaceServiceConfig()
+	resp, err := helper.GetAPI(config.Host+config.listPath, make(map[string]string))
 	if err != nil {
 		// Handle the error when the request fails
 		return nil, fmt.Errorf("failed to make GET request: %v", err)
 	}
-	defer resp.Body.Close()
-
-	// Check if the status code is not 200 OK
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("received non-OK status code: %d", resp.StatusCode)
-	}
-
-	// Read the response body
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		// Handle the error when reading the body fails
-		return nil, fmt.Errorf("failed to read response body: %v", err)
-	}
 
 	// Parse the JSON response
 	var response userNames
-	if err := json.Unmarshal(body, &response); err != nil {
+	if err := json.Unmarshal(resp, &response); err != nil {
 		// Handle the error when unmarshalling JSON fails
 		return nil, fmt.Errorf("failed to parse JSON response: %v", err)
 	}
@@ -66,7 +50,6 @@ func (s *MarioFaceService) ListIdentities() ([]string, error) {
 // enroll registers a new face.
 func (s *MarioFaceService) enroll(face models.Face) (basicModel.Response, error) {
 
-	// Add logic to save the face to your data store
 	return basicModel.Response{Code: "true", Message: "Face recognized"}, nil
 }
 

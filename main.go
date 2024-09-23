@@ -1,20 +1,15 @@
 package main
 
 import (
-	"log/slog"
-	"os"
-
+	"golang-ai-management/models"
 	routes "golang-ai-management/routes"
+	"log/slog"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-
-	if port == "" {
-		port = "8000"
-	}
+	var serverConfig = models.Config
 
 	router := gin.New()
 	router.Use(gin.Logger())
@@ -22,12 +17,7 @@ func main() {
 	//router.Use(middleware.Authentication())
 
 	routes.FaceRegRoutes(router)
-	//routes.MenuRoutes(router)
-	//routes.TableRoutes(router)
-	//routes.OrderRoutes(router)
-	//routes.OrderItemRoutes(router)
-	//routes.InvoiceRoutes(router)
 
-	slog.Info("Server is running in port 8000")
-	router.Run(":" + port)
+	slog.Info("Server is running in port %d", serverConfig.Port)
+	router.Run(":" + serverConfig.Port)
 }

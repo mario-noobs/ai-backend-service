@@ -8,11 +8,11 @@ import (
 	"net/url"
 )
 
-func GetAPI(endpoint string, params map[string]string) (string, error) {
+func GetAPI(endpoint string, params map[string]string) ([]byte, error) {
 	// Create a URL object and add parameters
 	baseURL, err := url.Parse(endpoint)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Add query parameters to the URL
@@ -25,17 +25,17 @@ func GetAPI(endpoint string, params map[string]string) (string, error) {
 	// Make the GET request
 	resp, err := http.Get(baseURL.String())
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	// Read and return the response
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(body), nil
+	return body, nil
 }
 
 func PostAPI(endpoint string, jsonData map[string]interface{}) (string, error) {
