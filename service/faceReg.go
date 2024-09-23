@@ -3,16 +3,17 @@ package service
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	helper "golang-ai-management/helpers"
 	"golang-ai-management/models"
-	"golang-ai-management/models/basicModel"
+	"golang-ai-management/models/response"
+	"golang-ai-management/utils"
+	"time"
 )
 
 type FaceService interface {
-	ListIdentities() ([]string, error)
-	enroll(face models.Face) (basicModel.Response, error)
-	recognize(face models.Face) (basicModel.Response, error)
+	ListIdentities() response.FaceResponse
+	Enroll(face models.Face) response.FaceRegResponse
+	Recognize(face models.Face) response.FaceRegResponse
 }
 
 type MarioFaceService struct {
@@ -24,38 +25,72 @@ type userNames struct {
 }
 
 // ListIdentities returns a list of identities.
-func (s *MarioFaceService) ListIdentities() ([]string, error) {
-	var config = LoadMarioFaceServiceConfig()
+func (s *MarioFaceService) ListIdentities() response.FaceResponse {
+	var config = s.config.LoadMarioFaceServiceConfig()
+	var code = models.BasicResponse{}
+	var data = []string{}
 	resp, err := helper.GetAPI(config.Host+config.listPath, make(map[string]string))
 	if err != nil {
-		// Handle the error when the request fails
-		return nil, fmt.Errorf("failed to make GET request: %v", err)
+		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
 	}
 
-	// Parse the JSON response
-	var response userNames
-	if err := json.Unmarshal(resp, &response); err != nil {
+	var responseJson userNames
+	if err := json.Unmarshal(resp, &responseJson); err != nil {
 		// Handle the error when unmarshalling JSON fails
-		return nil, fmt.Errorf("failed to parse JSON response: %v", err)
+		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
 	}
 
 	// Check if the list is empty
-	if len(response.Names) == 0 {
-		return nil, errors.New("no identities found")
+	if len(responseJson.Names) == 0 {
+		code = models.SetErrorCodeMessage(models.Success, errors.New("no identities found").Error())
+	} else {
+		code = models.SetErrorMessage(models.Success)
+		data = responseJson.Names
 	}
 
-	return response.Names, nil
+	return response.FaceResponse{
+		code,
+		data,
+	}
 }
 
 // enroll registers a new face.
-func (s *MarioFaceService) enroll(face models.Face) (basicModel.Response, error) {
+func (s *MarioFaceService) Enroll(face models.Face) response.FaceRegResponse {
+	config := s.config.LoadMarioFaceServiceConfig()
+	var code = models.BasicResponse{}
 
-	return basicModel.Response{Code: "true", Message: "Face recognized"}, nil
+	payload, err := utils.StructToMap(face)
+	if err != nil {
+		code = models.SetErrorCodeMessage(models.InvalidParamsErr, err.Error())
+	}
+
+	resp, err := helper.PostAPI(config.Host+config.enrollPath, payload)
+	if err != nil {
+		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
+	}
+
+	var result = models.BasicResponse{}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		// Handle the error when unmarshalling JSON fails
+		code = models.SetErrorCodeMessage(models.InvalidParamsErr, err.Error())
+	}
+
+	code = models.SetErrorCodeMessage(result.Code, result.Message)
+
+	// Check if the list is empty
+	if (result.Code != models.Success) && (result.Code != "") {
+		code = models.SetErrorCodeMessage(result.Code, result.Message)
+	}
+
+	return response.FaceRegResponse{code, response.FaceData{
+		Name:      face.Name,
+		CreatedAt: time.Now().Format(time.RFC3339),
+	}}
 }
 
 // recognize identifies a face.
-func (s *MarioFaceService) recognize(face models.Face) (basicModel.Response, error) {
+func (s *MarioFaceService) Recognize(face models.Face) response.FaceRegResponse {
 
 	// For example, return a mock response
-	return basicModel.Response{Code: "true", Message: "Face recognized"}, nil
+	return response.FaceRegResponse{}
 }

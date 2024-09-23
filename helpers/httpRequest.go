@@ -38,17 +38,17 @@ func GetAPI(endpoint string, params map[string]string) ([]byte, error) {
 	return body, nil
 }
 
-func PostAPI(endpoint string, jsonData map[string]interface{}) (string, error) {
+func PostAPI(endpoint string, jsonData map[string]interface{}) ([]byte, error) {
 	// Marshal the map into JSON format
 	jsonValue, err := json.Marshal(jsonData)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Create a new POST request with the JSON data
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Set the appropriate headers
@@ -58,15 +58,16 @@ func PostAPI(endpoint string, jsonData map[string]interface{}) (string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+
 	defer resp.Body.Close()
 
 	// Read and return the response
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(body), nil
+	return body, nil
 }
