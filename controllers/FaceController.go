@@ -44,6 +44,12 @@ func (f *FaceController) FaceEnroll() gin.HandlerFunc {
 
 func (f *FaceController) FaceRegconize() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, "FaceRegconize")
+		var faceModel models.Face
+		if err := c.ShouldBindJSON(&faceModel); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		response := f.service.Recognize(faceModel)
+		c.JSON(http.StatusOK, response)
 	}
 }

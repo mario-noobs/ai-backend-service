@@ -7,6 +7,7 @@ import (
 	"golang-ai-management/models"
 	"golang-ai-management/models/response"
 	"golang-ai-management/utils"
+	"strconv"
 	"time"
 )
 
@@ -91,6 +92,65 @@ func (s *MarioFaceService) Enroll(face models.Face) response.FaceRegResponse {
 // recognize identifies a face.
 func (s *MarioFaceService) Recognize(face models.Face) response.FaceRegResponse {
 
-	// For example, return a mock response
-	return response.FaceRegResponse{}
+	config := s.config.LoadMarioFaceServiceConfig()
+	var code = models.BasicResponse{}
+
+	payload, err := utils.StructToMap(face)
+	if err != nil {
+		code = models.SetErrorCodeMessage(models.InvalidParamsErr, err.Error())
+	}
+
+	resp, err := helper.PostAPI(config.Host+config.recognizePath, payload)
+	if err != nil {
+		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
+	}
+
+	result, err := MapResponse(resp)
+	if err != nil {
+		// Handle the error when unmarshalling JSON fails
+		code = models.SetErrorCodeMessage(models.BadRequest, err.Error())
+	}
+
+	if result.Code == models.Success {
+		return result
+	} else {
+		return response.FaceRegResponse{BasicResponse: code, Data: response.FaceData{
+			CreatedAt: time.Now().Format(time.RFC3339),
+		}}
+	}
+}
+
+func MapResponse(jsonData []byte) (response.FaceRegResponse, error) {
+	var tempResponse struct {
+		Code       string            `json:"code"`
+		Confidence map[string]string `json:"confidence"`
+		RawImage   string            `json:"raw_image"`
+	}
+
+	// Unmarshal the JSON response into the struct
+	err := json.Unmarshal(jsonData, &tempResponse)
+	if err != nil {
+		return response.FaceRegResponse{}, err
+	}
+
+	// Prepare the FaceRegResponse
+	regResponse := response.FaceRegResponse{
+		BasicResponse: models.SetErrorMessage(models.Success),
+		Data: response.FaceData{
+			Image:     &tempResponse.RawImage,
+			CreatedAt: time.Now().Format(time.RFC3339), // Example created_at date; set as needed
+		},
+	}
+
+	// Handle confidence mapping for any name
+	for name, probStr := range tempResponse.Confidence {
+		probability, err := strconv.ParseFloat(probStr, 64)
+		if err == nil {
+			regResponse.Data.Name = &name
+			regResponse.Data.Probability = &probability
+			break // Remove this if you want to capture all confidence entries
+		}
+	}
+
+	return regResponse, nil
 }

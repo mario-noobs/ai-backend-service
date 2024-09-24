@@ -6,6 +6,7 @@ type FaceData struct {
 	Name        *string  `json:"name"`
 	Probability *float64 `json:"probability"`
 	CreatedAt   string   `json:"created_at"`
+	Image       *string  `json:"image"`
 }
 
 type FaceRegResponse struct {
