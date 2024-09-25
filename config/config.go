@@ -17,7 +17,7 @@ var Config = loadConfig()
 func loadConfig() ServerConfig {
 	port := getEnv("SERVER_PORT", "8080")
 	host := getEnv("SERVER_HOST", "localhost")
-	logLevel := getEnv("LOG_LEVEL", "debug")
+	logLevel := getEnv("LOG_LEVEL", "info")
 	LogFormat := getEnv("LOG_FORMAT", "json")
 	LogType := getEnv("LOG_TYPE", "logrus")
 

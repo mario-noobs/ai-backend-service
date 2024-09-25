@@ -14,7 +14,7 @@ type MarioFaceServiceConfig struct {
 
 func (m MarioFaceServiceConfig) LoadMarioFaceServiceConfig() MarioFaceServiceConfig {
 	return MarioFaceServiceConfig{
-		listPath:      getEnv("FACE_LIST_API", "get-lists"),
+		listPath:      getEnv("FACE_LIST_API", "get-list"),
 		enrollPath:    getEnv("FACE_ENROLL_API", "add-identity"),
 		recognizePath: getEnv("FACE_RECOGNIZE_API", "recognize"),
 		Host:          getEnv("FACE_HOST", "http://75.119.149.223:5000/face/"),

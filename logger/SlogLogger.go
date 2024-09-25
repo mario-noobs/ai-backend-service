@@ -66,16 +66,16 @@ func (l *SlogLogger) Info(msg string, fields map[string]interface{}) {
 }
 
 // Warn logs a warning message with fields
-func (l *SlogLogger) Warn(msg string, fields map[string]interface{}) {
+func (l *SlogLogger) Warn(msg string) {
 	if l.level <= slog.LevelWarn {
-		l.logger.Warn(msg, fields)
+		l.logger.Warn(msg)
 	}
 }
 
 // Error logs an error message with fields
-func (l *SlogLogger) Error(msg string, fields map[string]interface{}) {
+func (l *SlogLogger) Error(msg string) {
 	if l.level <= slog.LevelError {
-		l.logger.Error(msg, fields)
+		l.logger.Error(msg)
 	}
 }
 

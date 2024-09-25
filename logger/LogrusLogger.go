@@ -32,13 +32,13 @@ func (l *LogrusLogger) Info(msg string, fields map[string]interface{}) {
 }
 
 // Warn logs a warning message with fields
-func (l *LogrusLogger) Warn(msg string, fields map[string]interface{}) {
-	l.logger.WithFields(log.Fields(fields)).Warn(msg)
+func (l *LogrusLogger) Warn(msg string) {
+	l.logger.Warn(msg)
 }
 
 // Error logs an error message with fields
-func (l *LogrusLogger) Error(msg string, fields map[string]interface{}) {
-	l.logger.WithFields(log.Fields(fields)).Error(msg)
+func (l *LogrusLogger) Error(msg string) {
+	l.logger.Error(msg)
 }
 
 // Debug logs a debug message with fields

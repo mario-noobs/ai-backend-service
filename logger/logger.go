@@ -9,8 +9,8 @@ import (
 type Logger interface {
 	Debug(msg string, fields map[string]interface{})
 	Info(msg string, fields map[string]interface{})
-	Warn(msg string, fields map[string]interface{})
-	Error(msg string, fields map[string]interface{})
+	Warn(msg string)
+	Error(msg string)
 	DebugArgs(msg string, args ...any)
 	InfoArgs(msg string, args ...any)
 	SetLogLevel(level string) error
