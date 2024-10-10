@@ -1,18 +1,24 @@
 package main
 
 import (
-	"os"
-
-	routes "golang-restaurant-management/routes"
-
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"golang-ai-management/config"
+	"golang-ai-management/logger"
+	routes "golang-ai-management/routes"
 )
 
 func main() {
-	port := os.Getenv("PORT")
 
-	if port == "" {
-		port = "8000"
+	gin.SetMode(gin.ReleaseMode)
+	var serverConfig = config.Config
+
+	factory := logger.LoggerFactory{}
+	newLogger, err := factory.NewLogger(serverConfig.LogType, serverConfig.LogFormat, serverConfig.LogLevel)
+
+	if err != nil {
+		fmt.Println("Error creating newLogger:", err)
+		return
 	}
 
 	router := gin.New()
@@ -20,12 +26,12 @@ func main() {
 	routes.UserRoutes(router)
 	//router.Use(middleware.Authentication())
 
-	routes.FoodRoutes(router)
-	//routes.MenuRoutes(router)
-	//routes.TableRoutes(router)
-	//routes.OrderRoutes(router)
-	//routes.OrderItemRoutes(router)
-	//routes.InvoiceRoutes(router)
+	routes.FaceRegRoutes(router)
+	newLogger.InfoArgs("Server running in port " + serverConfig.Port)
 
-	router.Run(":" + port)
+	err = router.Run(":" + serverConfig.Port)
+	if err != nil {
+		return
+	}
+
 }
