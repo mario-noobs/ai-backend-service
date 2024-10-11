@@ -37,8 +37,8 @@ func (c *config) InitFlags() {
 
 	flag.StringVar(
 		&c.grpcUserAddress,
-		"grpc-user-address",
-		"localhost:3201",
+		"grpc-auth-user-address",
+		"localhost:3101",
 		"gRPC user address. Default: localhost:3201",
 	)
 }

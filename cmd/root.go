@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"golang-ai-management/common"
 	"golang-ai-management/composer"
-	"golang-ai-management/middleware"
 	"net/http"
 	"os"
 	"time"
@@ -49,7 +48,7 @@ var rootCmd = &cobra.Command{
 		router := ginComp.GetRouter()
 		router.Use(gin.Recovery(), gin.Logger(), smdlw.Recovery(serviceCtx))
 
-		router.Use(middleware.Authentication())
+		//router.Use(middleware.Authentication())
 		router.GET("/ping", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"data": "pong"})
 		})
@@ -69,8 +68,8 @@ var rootCmd = &cobra.Command{
 func SetupRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {
 	authAPIService := composer.ComposeAuthAPIService(serviceCtx)
 
-	router.POST("/login", authAPIService.LoginHdl())
-	router.POST("/signup", authAPIService.RegisterHdl())
+	router.POST("/authenticate", authAPIService.LoginHdl())
+	router.POST("/register", authAPIService.RegisterHdl())
 	router.POST("/logout", authAPIService.LoginHdl())
 }
 

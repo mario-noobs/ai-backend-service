@@ -2,17 +2,15 @@ package coordinate
 
 import (
 	"context"
+	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/pkg/errors"
 	"golang-ai-management/common"
-	"golang-ai-management/models"
+	"golang-ai-management/proto/pb"
 )
 
-type AuthRepository interface {
-	AddNewAuth(ctx context.Context, data *models.Auth) error
-	GetAuth(ctx context.Context, email string) (*models.Auth, error)
-}
-
-type UserRepository interface {
-	CreateUser(ctx context.Context, firstName, lastName, email string) (newId int, err error)
+type AuthService interface {
+	Login(ctx context.Context, in *pb.AuthEmailPassword) (*pb.TokenResponse, error)
+	Register(ctx context.Context, in *pb.AuthRegister) (*empty.Empty, error)
 }
 
 type Hasher interface {
@@ -22,26 +20,33 @@ type Hasher interface {
 }
 
 type business struct {
-	repository     AuthRepository
-	userRepository UserRepository
-	jwtProvider    common.JWTProvider
-	hasher         Hasher
+	authService AuthService
+	jwtProvider common.JWTProvider
+	hasher      Hasher
 }
 
-func (b *business) Login(ctx context.Context, data *models.AuthEmailPassword) (*models.TokenResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (b business) Login(ctx context.Context, data *pb.AuthEmailPassword) (*pb.TokenResponse, error) {
+	resp, err := b.authService.Login(ctx, data)
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return resp, nil
 }
 
-func (b *business) Register(ctx context.Context, data *models.AuthRegister) error {
-	//TODO implement me
-	panic("implement me")
+func (b business) Register(ctx context.Context, in *pb.AuthRegister) (*empty.Empty, error) {
+	resp, err := b.authService.Register(ctx, in)
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return resp, nil
 }
 
-func NewBusiness(repository AuthRepository,
+func NewBusiness(authService AuthService,
 	jwtProvider common.JWTProvider, hasher Hasher) *business {
 	return &business{
-		repository:  repository,
+		authService: authService,
 		jwtProvider: jwtProvider,
 		hasher:      hasher,
 	}

@@ -4,8 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	sctx "github.com/viettranx/service-context"
 	"golang-ai-management/common"
-	authBusiness "golang-ai-management/service/coordinate"
-	authSQLRepository "golang-ai-management/service/repository/mysql"
+	authService "golang-ai-management/service/auth"
+	business "golang-ai-management/service/coordinate"
 	authAPI "golang-ai-management/transport/api"
 )
 
@@ -15,13 +15,13 @@ type AuthService interface {
 }
 
 func ComposeAuthAPIService(serviceCtx sctx.ServiceContext) AuthService {
-	db := serviceCtx.MustGet(common.KeyCompMySQL).(common.GormComponent)
 	jwtComp := serviceCtx.MustGet(common.KeyCompJWT).(common.JWTProvider)
 
-	authRepo := authSQLRepository.NewMySQLRepository(db.GetDB())
+	auth := authService.NewClient(ComposeUserAuthRPCClient(serviceCtx))
+
 	hasher := new(common.Hasher)
 
-	biz := authBusiness.NewBusiness(authRepo, jwtComp, hasher)
+	biz := business.NewBusiness(auth, jwtComp, hasher)
 	serviceAPI := authAPI.NewAPI(serviceCtx, biz)
 
 	return serviceAPI
