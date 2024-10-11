@@ -1,8 +1,8 @@
-package service
+package face
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"golang-ai-management/config"
 	helper "golang-ai-management/helpers"
 	"golang-ai-management/logger"
@@ -13,61 +13,29 @@ import (
 	"time"
 )
 
+func NewFaceBusiness(faceService FaceService, config MarioFaceServiceConfig) *FaceBussiness {
+	return &FaceBussiness{
+		faceService,
+		config,
+	}
+}
+
 type FaceService interface {
-	ListIdentities() response.FaceResponse
-	Enroll(face models.Face) response.FaceRegResponse
-	Recognize(face models.Face) response.FaceRegResponse
+	Enroll(ctx context.Context, face models.Face) response.FaceRegResponse
+	Recognize(ctx context.Context, face models.Face) response.FaceRegResponse
 }
 
-type MarioFaceService struct {
-	config MarioFaceServiceConfig
-}
-
-type userNames struct {
-	Names []string `json:"names"`
+type FaceBussiness struct {
+	FaceBussiness FaceService
+	config        MarioFaceServiceConfig
 }
 
 var serverConfig = config.Config
 var factory = logger.LoggerFactory{}
 var newLogger, err = factory.NewLogger(serverConfig.LogType, serverConfig.LogFormat, serverConfig.LogLevel)
 
-// ListIdentities returns a list of identities.
-func (s *MarioFaceService) ListIdentities() response.FaceResponse {
-	var config = s.config.LoadMarioFaceServiceConfig()
-	var code = models.BasicResponse{}
-	var data = []string{}
-	newLogger.DebugArgs("ListIdentities", "URLs", config.Host+config.listPath)
-	resp, err := helper.GetAPI(config.Host+config.listPath, make(map[string]string))
-	if err != nil {
-		newLogger.Error(err.Error())
-		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
-	}
-
-	var responseJson userNames
-	if err := json.Unmarshal(resp, &responseJson); err != nil {
-		// Handle the error when unmarshalling JSON fails
-		newLogger.Error(err.Error())
-		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
-	}
-
-	// Check if the list is empty
-	if len(responseJson.Names) == 0 {
-		code = models.SetErrorCodeMessage(models.Success, errors.New("no identities found").Error())
-	} else {
-		code = models.SetErrorMessage(models.Success)
-		data = responseJson.Names
-	}
-
-	newLogger.DebugArgs("ListIdentities response", "data", data)
-	return response.FaceResponse{
-		code,
-		data,
-	}
-}
-
-// enroll registers a new face.
-func (s *MarioFaceService) Enroll(face models.Face) response.FaceRegResponse {
-	config := s.config.LoadMarioFaceServiceConfig()
+func (f FaceBussiness) Enroll(ctx context.Context, face models.Face) response.FaceRegResponse {
+	config := f.config.LoadMarioFaceServiceConfig()
 	var code = models.BasicResponse{}
 	newLogger.DebugArgs("Enroll", "Params", face)
 
@@ -91,8 +59,6 @@ func (s *MarioFaceService) Enroll(face models.Face) response.FaceRegResponse {
 		code = models.SetErrorCodeMessage(models.InvalidParamsErr, err.Error())
 	}
 
-	code = models.SetErrorCodeMessage(result.Code, result.Message)
-
 	// Check if the list is empty
 	if (result.Code != models.Success) && (result.Code != "") {
 		code = models.SetErrorCodeMessage(result.Code, result.Message)
@@ -106,10 +72,8 @@ func (s *MarioFaceService) Enroll(face models.Face) response.FaceRegResponse {
 	}}
 }
 
-// recognize identifies a face.
-func (s *MarioFaceService) Recognize(face models.Face) response.FaceRegResponse {
-
-	config := s.config.LoadMarioFaceServiceConfig()
+func (f FaceBussiness) Recognize(ctx context.Context, face models.Face) response.FaceRegResponse {
+	config := f.config.LoadMarioFaceServiceConfig()
 	var code = models.BasicResponse{}
 	newLogger.DebugArgs("Recognize", "Params", face)
 

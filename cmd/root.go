@@ -55,9 +55,12 @@ var rootCmd = &cobra.Command{
 
 		//go StartGRPCServices(serviceCtx)
 
-		v1 := router.Group("/api/v1/user")
+		v1User := router.Group("/api/v1/user")
+		SetupUserRoutes(v1User, serviceCtx)
 
-		SetupRoutes(v1, serviceCtx)
+		v1Face := router.Group("/api/v1/face")
+		//v1Face.Use(middleware.Authentication())
+		SetupFaceRoutes(v1Face, serviceCtx)
 
 		if err := router.Run(fmt.Sprintf(":%d", ginComp.GetPort())); err != nil {
 			logger.Fatal(err)
@@ -65,12 +68,19 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func SetupRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {
+func SetupUserRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {
 	authAPIService := composer.ComposeAuthAPIService(serviceCtx)
 
 	router.POST("/authenticate", authAPIService.LoginHdl())
 	router.POST("/register", authAPIService.RegisterHdl())
 	router.POST("/logout", authAPIService.LoginHdl())
+}
+
+func SetupFaceRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {
+	faceAPIService := composer.ComposeFaceAPIService(serviceCtx)
+
+	router.POST("/register-identity", faceAPIService.RegisterFaceHdl())
+	router.POST("/recognize-identity", faceAPIService.RecognizeFaceHdl())
 }
 
 func Execute() {
