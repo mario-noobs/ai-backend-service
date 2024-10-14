@@ -7,7 +7,10 @@ import (
 	authService "golang-ai-management/service/auth"
 	authBusiness "golang-ai-management/service/coordinate"
 	faceBusiness "golang-ai-management/service/face"
+	profileBusiness "golang-ai-management/service/profile"
+	profileService "golang-ai-management/service/profile"
 	authAPI "golang-ai-management/transport/api"
+	profileAPI "golang-ai-management/transport/api"
 )
 
 type AuthService interface {
@@ -18,6 +21,10 @@ type AuthService interface {
 type FaceServiceHandler interface {
 	RegisterFaceHdl() func(*gin.Context)
 	RecognizeFaceHdl() func(*gin.Context)
+}
+
+type ProfileHandler interface {
+	GetProfileHdl() func(*gin.Context)
 }
 
 func ComposeAuthAPIService(serviceCtx sctx.ServiceContext) AuthService {
@@ -54,6 +61,18 @@ func ComposeFaceAPIService(serviceCtx sctx.ServiceContext) FaceServiceHandler {
 	faceBiz := faceBusiness.NewFaceBusiness(*faceService, *faceServiceConfig)
 
 	serviceAPI := authAPI.NewAPI(serviceCtx, authBiz, faceBiz)
+
+	return serviceAPI
+}
+
+func ComposeProfileAPIService(serviceCtx sctx.ServiceContext) ProfileHandler {
+	jwtComp := serviceCtx.MustGet(common.KeyCompJWT).(common.JWTProvider)
+
+	profile := profileService.NewClient(ComposeProfileRPCClient(serviceCtx))
+
+	profileBiz := profileBusiness.NewBusiness(profile, jwtComp)
+
+	serviceAPI := profileAPI.NewProfileAPI(serviceCtx, profileBiz)
 
 	return serviceAPI
 }

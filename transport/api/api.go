@@ -23,14 +23,36 @@ type FaceBusiness interface {
 	Recognize(ctx context.Context, data models.Face) response.FaceRegResponse
 }
 
+type ProfileBusiness interface {
+	GetUserProfile(context.Context) (*pb.User, error)
+}
+
 type api struct {
-	serviceCtx   sctx.ServiceContext
-	authBusiness AuthBusiness
-	faceBusiness FaceBusiness
+	serviceCtx      sctx.ServiceContext
+	authBusiness    AuthBusiness
+	faceBusiness    FaceBusiness
+	profileBusiness ProfileBusiness
+}
+
+func (api api) GetProfileHdl() func(*gin.Context) {
+	return func(c *gin.Context) {
+		response, err := api.profileBusiness.GetUserProfile(c.Request.Context())
+
+		if err != nil {
+			common.WriteErrorResponse(c, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, core.ResponseData(response))
+	}
 }
 
 func NewAPI(serviceCtx sctx.ServiceContext, authBusiness AuthBusiness, faceBusiness FaceBusiness) *api {
 	return &api{serviceCtx: serviceCtx, authBusiness: authBusiness, faceBusiness: faceBusiness}
+}
+
+func NewProfileAPI(serviceCtx sctx.ServiceContext, business ProfileBusiness) *api {
+	return &api{serviceCtx: serviceCtx, profileBusiness: business}
 }
 
 func (api *api) LoginHdl() func(*gin.Context) {

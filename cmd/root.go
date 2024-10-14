@@ -63,6 +63,9 @@ var rootCmd = &cobra.Command{
 		//v1Face.Use(middleware.Authentication())
 		SetupFaceRoutes(v1Face, serviceCtx)
 
+		v1Profile := router.Group("/")
+		SetupProfileRoutes(v1Profile, serviceCtx)
+
 		if err := router.Run(fmt.Sprintf(":%d", ginComp.GetPort())); err != nil {
 			logger.Fatal(err)
 		}
@@ -82,6 +85,12 @@ func SetupFaceRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {
 
 	router.POST("/register-identity", faceAPIService.RegisterFaceHdl())
 	router.POST("/recognize-identity", faceAPIService.RecognizeFaceHdl())
+}
+
+func SetupProfileRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {
+	profileAPIService := composer.ComposeProfileAPIService(serviceCtx)
+
+	router.POST("/profile", profileAPIService.GetProfileHdl())
 }
 
 func Execute() {
