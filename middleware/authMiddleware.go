@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"fmt"
-	helper "golang-restaurant-management/helpers"
+	helper "golang-ai-management/helpers"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -28,6 +28,23 @@ func Authentication() gin.HandlerFunc {
 		c.Set("first_name", claims.First_name)
 		c.Set("last_name", claims.Last_name)
 		c.Set("uid", claims.Uid)
+
+		c.Next()
+	}
+}
+
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Credentials", "false")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Header("Access-Control-Allow-Methods", "POST,HEAD,PATCH, OPTIONS, GET, PUT")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
 
 		c.Next()
 	}
