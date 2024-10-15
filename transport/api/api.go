@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/protobuf/ptypes/empty"
 	sctx "github.com/viettranx/service-context"
@@ -10,6 +11,7 @@ import (
 	"golang-ai-management/models"
 	"golang-ai-management/models/response"
 	"golang-ai-management/proto/pb"
+	"google.golang.org/grpc/metadata"
 	"net/http"
 )
 
@@ -36,7 +38,19 @@ type api struct {
 
 func (api api) GetProfileHdl() func(*gin.Context) {
 	return func(c *gin.Context) {
-		response, err := api.profileBusiness.GetUserProfile(c.Request.Context())
+
+		token := c.Request.Header.Get("Authorization")
+		if token == "" {
+			common.WriteErrorResponse(c, errors.New("missing authorization token"))
+			return
+		}
+		// Step 2: Create metadata with the token
+		md := metadata.Pairs("authorization", token)
+
+		// Step 3: Create a new outgoing context with the metadata
+		ctx := metadata.NewOutgoingContext(c.Request.Context(), md)
+
+		response, err := api.profileBusiness.GetUserProfile(ctx)
 
 		if err != nil {
 			common.WriteErrorResponse(c, err)
