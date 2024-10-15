@@ -38,7 +38,7 @@ func GetAPI(endpoint string, params map[string]string) ([]byte, error) {
 	return body, nil
 }
 
-func PostAPI(endpoint string, jsonData map[string]interface{}) ([]byte, error) {
+func PostAPI(endpoint string, jsonData map[string]interface{}, jwt string) ([]byte, error) {
 	// Marshal the map into JSON format
 	jsonValue, err := json.Marshal(jsonData)
 	if err != nil {
@@ -53,6 +53,7 @@ func PostAPI(endpoint string, jsonData map[string]interface{}) ([]byte, error) {
 
 	// Set the appropriate headers
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", jwt)
 
 	// Make the POST request
 	client := &http.Client{}

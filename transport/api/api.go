@@ -21,8 +21,8 @@ type AuthBusiness interface {
 }
 
 type FaceBusiness interface {
-	Enroll(ctx context.Context, data models.Face) response.FaceRegResponse
-	Recognize(ctx context.Context, data models.Face) response.FaceRegResponse
+	Enroll(ctx context.Context, data models.Face, jwt string) response.FaceRegResponse
+	Recognize(ctx context.Context, data models.Face, jwt string) response.FaceRegResponse
 }
 
 type ProfileBusiness interface {
@@ -110,6 +110,13 @@ func (api *api) RegisterHdl() func(*gin.Context) {
 }
 func (api *api) RegisterFaceHdl() func(*gin.Context) {
 	return func(c *gin.Context) {
+
+		jwtToken, exists := c.Get("token")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT not found"})
+			return
+		}
+
 		var data models.Face
 
 		if err := c.ShouldBind(&data); err != nil {
@@ -117,7 +124,7 @@ func (api *api) RegisterFaceHdl() func(*gin.Context) {
 			return
 		}
 
-		resp := api.faceBusiness.Enroll(c.Request.Context(), data)
+		resp := api.faceBusiness.Enroll(c.Request.Context(), data, jwtToken.(string))
 
 		c.JSON(http.StatusOK, core.ResponseData(resp))
 	}
@@ -125,6 +132,13 @@ func (api *api) RegisterFaceHdl() func(*gin.Context) {
 
 func (api *api) RecognizeFaceHdl() func(*gin.Context) {
 	return func(c *gin.Context) {
+
+		jwtToken, exists := c.Get("token")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT not found"})
+			return
+		}
+
 		var data models.Face
 
 		if err := c.ShouldBind(&data); err != nil {
@@ -132,7 +146,7 @@ func (api *api) RecognizeFaceHdl() func(*gin.Context) {
 			return
 		}
 
-		resp := api.faceBusiness.Recognize(c.Request.Context(), data)
+		resp := api.faceBusiness.Recognize(c.Request.Context(), data, jwtToken.(string))
 
 		c.JSON(http.StatusOK, core.ResponseData(resp))
 	}

@@ -19,6 +19,12 @@ func StructToMap(data interface{}) (map[string]interface{}, error) {
 		field := v.Type().Field(i)
 		value := v.Field(i)
 
+		if field.Name == "Name" {
+			field.Name = "userId"
+		} else if field.Name == "Image" {
+			field.Name = "imageBase64"
+		}
+
 		// Store the field name and its value as interface{}
 		result[field.Name] = value.Interface()
 	}

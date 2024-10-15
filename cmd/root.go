@@ -60,7 +60,7 @@ var rootCmd = &cobra.Command{
 		SetupUserRoutes(v1User, serviceCtx)
 
 		v1Face := router.Group("/api/v1/face")
-		//v1Face.Use(middleware.Authentication())
+		v1Face.Use(middleware.Authentication())
 		SetupFaceRoutes(v1Face, serviceCtx)
 
 		v1Profile := router.Group("/")

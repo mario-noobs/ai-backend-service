@@ -21,8 +21,8 @@ func NewFaceBusiness(faceService FaceService, config MarioFaceServiceConfig) *Fa
 }
 
 type FaceService interface {
-	Enroll(ctx context.Context, face models.Face) response.FaceRegResponse
-	Recognize(ctx context.Context, face models.Face) response.FaceRegResponse
+	Enroll(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse
+	Recognize(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse
 }
 
 type FaceBussiness struct {
@@ -34,7 +34,7 @@ var serverConfig = config.Config
 var factory = logger.LoggerFactory{}
 var newLogger, err = factory.NewLogger(serverConfig.LogType, serverConfig.LogFormat, serverConfig.LogLevel)
 
-func (f FaceBussiness) Enroll(ctx context.Context, face models.Face) response.FaceRegResponse {
+func (f FaceBussiness) Enroll(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse {
 	config := f.config.LoadMarioFaceServiceConfig()
 	var code = models.BasicResponse{}
 	newLogger.DebugArgs("Enroll", "Params", face)
@@ -46,7 +46,7 @@ func (f FaceBussiness) Enroll(ctx context.Context, face models.Face) response.Fa
 	}
 	newLogger.DebugArgs("Enroll", "URLs", config.Host+config.listPath)
 
-	resp, err := helper.PostAPI(config.Host+config.enrollPath, payload)
+	resp, err := helper.PostAPI(config.Host+config.enrollPath, payload, jwt)
 	if err != nil {
 		newLogger.Error(err.Error())
 		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
@@ -72,7 +72,7 @@ func (f FaceBussiness) Enroll(ctx context.Context, face models.Face) response.Fa
 	}}
 }
 
-func (f FaceBussiness) Recognize(ctx context.Context, face models.Face) response.FaceRegResponse {
+func (f FaceBussiness) Recognize(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse {
 	config := f.config.LoadMarioFaceServiceConfig()
 	var code = models.BasicResponse{}
 	newLogger.DebugArgs("Recognize", "Params", face)
@@ -83,7 +83,7 @@ func (f FaceBussiness) Recognize(ctx context.Context, face models.Face) response
 		code = models.SetErrorCodeMessage(models.InvalidParamsErr, err.Error())
 	}
 
-	resp, err := helper.PostAPI(config.Host+config.recognizePath, payload)
+	resp, err := helper.PostAPI(config.Host+config.recognizePath, payload, jwt)
 	if err != nil {
 		newLogger.Error(err.Error())
 		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
