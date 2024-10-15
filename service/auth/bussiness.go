@@ -1,4 +1,4 @@
-package coordinate
+package auth
 
 import (
 	"context"

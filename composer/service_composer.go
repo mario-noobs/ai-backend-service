@@ -5,7 +5,6 @@ import (
 	sctx "github.com/viettranx/service-context"
 	"golang-ai-management/common"
 	authService "golang-ai-management/service/auth"
-	authBusiness "golang-ai-management/service/coordinate"
 	faceBusiness "golang-ai-management/service/face"
 	profileBusiness "golang-ai-management/service/profile"
 	profileService "golang-ai-management/service/profile"
@@ -37,7 +36,7 @@ func ComposeAuthAPIService(serviceCtx sctx.ServiceContext) AuthService {
 	faceService := new(faceBusiness.FaceService)
 	faceServiceConfig := new(faceBusiness.MarioFaceServiceConfig)
 
-	authBiz := authBusiness.NewBusiness(auth, jwtComp, hasher)
+	authBiz := authService.NewBusiness(auth, jwtComp, hasher)
 
 	faceBiz := faceBusiness.NewFaceBusiness(*faceService, *faceServiceConfig)
 
@@ -56,7 +55,7 @@ func ComposeFaceAPIService(serviceCtx sctx.ServiceContext) FaceServiceHandler {
 	faceService := new(faceBusiness.FaceService)
 	faceServiceConfig := new(faceBusiness.MarioFaceServiceConfig)
 
-	authBiz := authBusiness.NewBusiness(auth, jwtComp, hasher)
+	authBiz := authService.NewBusiness(auth, jwtComp, hasher)
 
 	faceBiz := faceBusiness.NewFaceBusiness(*faceService, *faceServiceConfig)
 
