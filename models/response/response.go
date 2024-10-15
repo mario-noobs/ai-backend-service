@@ -10,6 +10,7 @@ type FaceData struct {
 }
 
 type FaceRegResponse struct {
+	UserId string `json:"userId"`
 	models.BasicResponse
 	Data FaceData `json:"data"`
 }

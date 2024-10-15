@@ -1,8 +1,9 @@
 package models
 
 type BasicResponse struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	Code      string `json:"code"`
+	Message   string `json:"message"`
+	RequestId string `json:"requestId"`
 }
 
 // Response codes

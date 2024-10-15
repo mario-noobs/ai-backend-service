@@ -36,7 +36,7 @@ var newLogger, err = factory.NewLogger(serverConfig.LogType, serverConfig.LogFor
 
 func (f FaceBussiness) Enroll(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse {
 	config := f.config.LoadMarioFaceServiceConfig()
-	var code = models.BasicResponse{}
+	var code = models.BasicResponse{RequestId: "None"}
 	newLogger.DebugArgs("Enroll", "Params", face)
 
 	payload, err := utils.StructToMap(face)
@@ -52,21 +52,16 @@ func (f FaceBussiness) Enroll(ctx context.Context, face models.Face, jwt string)
 		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
 	}
 
-	var result = models.BasicResponse{}
-	if err := json.Unmarshal(resp, &result); err != nil {
+	result, err := MapResponse(resp)
+	if err != nil {
 		// Handle the error when unmarshalling JSON fails
 		newLogger.Error(err.Error())
-		code = models.SetErrorCodeMessage(models.InvalidParamsErr, err.Error())
-	}
-
-	// Check if the list is empty
-	if (result.Code != models.Success) && (result.Code != "") {
-		code = models.SetErrorCodeMessage(result.Code, result.Message)
+		code = models.SetErrorCodeMessage(models.BadRequest, err.Error())
 	}
 
 	newLogger.DebugArgs("Enroll", "response", code)
 
-	return response.FaceRegResponse{code, response.FaceData{
+	return response.FaceRegResponse{*face.Name, result.BasicResponse, response.FaceData{
 		Name:      face.Name,
 		CreatedAt: time.Now().Format(time.RFC3339),
 	}}
@@ -108,10 +103,20 @@ func (f FaceBussiness) Recognize(ctx context.Context, face models.Face, jwt stri
 }
 
 func MapResponse(jsonData []byte) (response.FaceRegResponse, error) {
+
+	type SearchData struct {
+		Confidence map[string]string `json:"searh_result"`
+		UserId     string            `json:"userId"`
+	}
+
 	var tempResponse struct {
-		Code       string            `json:"code"`
-		Confidence map[string]string `json:"confidence"`
-		RawImage   string            `json:"raw_image"`
+		Code      string     `json:"code"`
+		Message   string     `json:"message"`
+		RequestId string     `json:"requestId"`
+		UserId    string     `json:"userId"`
+		RawImage  string     `json:"rawImage"`
+		Flow      string     `json:"flow"`
+		Data      SearchData `json:"searchData"`
 	}
 
 	// Unmarshal the JSON response into the struct
@@ -122,7 +127,12 @@ func MapResponse(jsonData []byte) (response.FaceRegResponse, error) {
 
 	// Prepare the FaceRegResponse
 	regResponse := response.FaceRegResponse{
-		BasicResponse: models.SetErrorMessage(models.Success),
+		UserId: tempResponse.UserId,
+		BasicResponse: models.BasicResponse{
+			Code:      tempResponse.Code,
+			Message:   tempResponse.Message,
+			RequestId: tempResponse.RequestId,
+		},
 		Data: response.FaceData{
 			Image:     &tempResponse.RawImage,
 			CreatedAt: time.Now().Format(time.RFC3339), // Example created_at date; set as needed
@@ -130,8 +140,8 @@ func MapResponse(jsonData []byte) (response.FaceRegResponse, error) {
 	}
 
 	// Handle confidence mapping for any name
-	for name, probStr := range tempResponse.Confidence {
-		probability, err := strconv.ParseFloat(probStr, 64)
+	for name, probStr := range tempResponse.Data.Confidence {
+		probability, err := strconv.ParseFloat(string(probStr), 64)
 		if err == nil {
 			regResponse.Data.Name = &name
 			regResponse.Data.Probability = &probability
