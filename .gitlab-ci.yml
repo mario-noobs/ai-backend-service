@@ -2,6 +2,7 @@ image: golang:1.23
 
 stages:
   - build
+  - deploy
 
 format:
   stage: build
@@ -51,22 +52,16 @@ build:
       - ai-backend-management
     expire_in: 1 hour
 
-#sonarcloud-check:
-#  stage: build
-#  needs:
-#    - job: test
-#      artifacts: true
-#    - job: vet
-#      artifacts: true
-#  image:
-#    name: sonarsource/sonar-scanner-cli:latest
-#    entrypoint: [""]
-#  variables:
-#    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
-#    GIT_DEPTH: "0"
-#  cache:
-#    key: "${CI_JOB_NAME}"
-#    paths:
-#      - .sonar/cache
-#  script:
-#    - sonar-scanner
+deploy:
+  stage: deploy
+  needs:
+    - job: build
+      artifacts: true
+  script:
+    - >
+      curl --location --output artifacts.zip
+      "${CI_API_V4_URL}/projects/10/jobs/${CI_JOB_ID}/artifacts"
+      --header "TOKEN: ${CI_JOB_TOKEN}"
+    - ls -lah
+    - cat artifacts.zip
+
