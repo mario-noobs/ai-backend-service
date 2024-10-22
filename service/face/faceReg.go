@@ -64,7 +64,7 @@ func (f FaceBussiness) Enroll(ctx context.Context, face models.Face, jwt string)
 
 	logger.Info("response", "method", method, "data", result, "ms", f.time.End())
 
-	return response.FaceRegResponse{*face.Name, result.BasicResponse, response.FaceData{
+	return response.FaceRegResponse{UserId: *face.Name, BasicResponse: result.BasicResponse, Data: response.FaceData{
 		Name:      face.Name,
 		CreatedAt: time.Now().Format(time.RFC3339),
 	}}
