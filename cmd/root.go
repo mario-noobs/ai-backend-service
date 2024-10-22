@@ -39,7 +39,6 @@ var rootCmd = &cobra.Command{
 		// Make some delay for DB ready (migration)
 		// remove it if you already had your own DB
 		time.Sleep(time.Second * 5)
-
 		if err := serviceCtx.Load(); err != nil {
 			logger.Fatal(err)
 		}
