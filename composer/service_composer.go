@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	sctx "github.com/viettranx/service-context"
 	"golang-ai-management/common"
+	helper "golang-ai-management/helpers"
 	authService "golang-ai-management/service/auth"
 	faceBusiness "golang-ai-management/service/face"
 	profileBusiness "golang-ai-management/service/profile"
@@ -32,13 +33,14 @@ func ComposeAuthAPIService(serviceCtx sctx.ServiceContext) AuthService {
 	auth := authService.NewClient(ComposeUserAuthRPCClient(serviceCtx))
 
 	hasher := new(common.Hasher)
+	time := new(helper.Timer)
 
 	faceService := new(faceBusiness.FaceService)
 	faceServiceConfig := new(faceBusiness.MarioFaceServiceConfig)
 
 	authBiz := authService.NewBusiness(auth, jwtComp, hasher)
 
-	faceBiz := faceBusiness.NewFaceBusiness(*faceService, *faceServiceConfig)
+	faceBiz := faceBusiness.NewFaceBusiness(*faceService, *faceServiceConfig, *time)
 
 	serviceAPI := authAPI.NewAPI(serviceCtx, authBiz, faceBiz)
 
@@ -51,13 +53,14 @@ func ComposeFaceAPIService(serviceCtx sctx.ServiceContext) FaceServiceHandler {
 	auth := authService.NewClient(ComposeUserAuthRPCClient(serviceCtx))
 
 	hasher := new(common.Hasher)
+	time := new(helper.Timer)
 
 	faceService := new(faceBusiness.FaceService)
 	faceServiceConfig := new(faceBusiness.MarioFaceServiceConfig)
 
 	authBiz := authService.NewBusiness(auth, jwtComp, hasher)
 
-	faceBiz := faceBusiness.NewFaceBusiness(*faceService, *faceServiceConfig)
+	faceBiz := faceBusiness.NewFaceBusiness(*faceService, *faceServiceConfig, *time)
 
 	serviceAPI := authAPI.NewAPI(serviceCtx, authBiz, faceBiz)
 

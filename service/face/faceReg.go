@@ -3,20 +3,21 @@ package face
 import (
 	"context"
 	"encoding/json"
-	"golang-ai-management/config"
 	helper "golang-ai-management/helpers"
-	"golang-ai-management/logger"
 	"golang-ai-management/models"
 	"golang-ai-management/models/response"
 	"golang-ai-management/utils"
+	"log/slog"
+	"os"
 	"strconv"
 	"time"
 )
 
-func NewFaceBusiness(faceService FaceService, config MarioFaceServiceConfig) *FaceBussiness {
+func NewFaceBusiness(faceService FaceService, config MarioFaceServiceConfig, time helper.Timer) *FaceBussiness {
 	return &FaceBussiness{
 		faceService,
 		config,
+		time,
 	}
 }
 
@@ -28,74 +29,79 @@ type FaceService interface {
 type FaceBussiness struct {
 	FaceBussiness FaceService
 	config        MarioFaceServiceConfig
+	time          helper.Timer
 }
 
-var serverConfig = config.Config
-var factory = logger.LoggerFactory{}
-var newLogger, err = factory.NewLogger(serverConfig.LogType, serverConfig.LogFormat, serverConfig.LogLevel)
+var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 func (f FaceBussiness) Enroll(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse {
-	config := f.config.LoadMarioFaceServiceConfig()
-	var code = models.BasicResponse{RequestId: "None"}
-	newLogger.DebugArgs("Enroll", "Params", face)
+
+	var method = "FaceBussiness_Enroll"
+	f.time.Start()
+	logger.Info("request", "method", method)
+
+	cfg := f.config.LoadMarioFaceServiceConfig()
 
 	payload, err := utils.StructToMap(face)
 	if err != nil {
-		newLogger.Error(err.Error())
-		code = models.SetErrorCodeMessage(models.InvalidParamsErr, err.Error())
-	}
-	newLogger.DebugArgs("Enroll", "URLs", config.Host+config.listPath)
+		logger.Error("response", "method", method, "err", err, "ms", nil)
 
-	resp, err := helper.PostAPI(config.Host+config.enrollPath, payload, jwt)
+	}
+	logger.DebugContext(ctx, method, "URLs", cfg.Host+cfg.listPath)
+
+	resp, err := helper.PostAPI(cfg.Host+cfg.enrollPath, payload, jwt)
 	if err != nil {
-		newLogger.Error(err.Error())
-		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
+		logger.Error("response", "method", method, "err", err, "ms", nil)
+
 	}
 
 	result, err := MapResponse(resp)
 	if err != nil {
 		// Handle the error when unmarshalling JSON fails
-		newLogger.Error(err.Error())
-		code = models.SetErrorCodeMessage(models.BadRequest, err.Error())
+		logger.Error("response", "method", method, "err", err, "ms", nil)
+
 	}
 
-	newLogger.DebugArgs("Enroll", "response", code)
+	logger.Info("response", "method", method, "data", result, "ms", f.time.End())
 
-	return response.FaceRegResponse{*face.Name, result.BasicResponse, response.FaceData{
+	return response.FaceRegResponse{UserId: *face.Name, BasicResponse: result.BasicResponse, Data: response.FaceData{
 		Name:      face.Name,
 		CreatedAt: time.Now().Format(time.RFC3339),
 	}}
 }
 
 func (f FaceBussiness) Recognize(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse {
-	config := f.config.LoadMarioFaceServiceConfig()
+	var method = "FaceBussiness_Enroll"
+	f.time.Start()
+	logger.Info("request", "method", method)
+
+	cfg := f.config.LoadMarioFaceServiceConfig()
 	var code = models.BasicResponse{}
-	newLogger.DebugArgs("Recognize", "Params", face)
 
 	payload, err := utils.StructToMap(face)
 	if err != nil {
-		newLogger.Error(err.Error())
+		logger.Error("response", "method", method, "err", err, "ms", nil)
 		code = models.SetErrorCodeMessage(models.InvalidParamsErr, err.Error())
 	}
 
-	resp, err := helper.PostAPI(config.Host+config.recognizePath, payload, jwt)
+	resp, err := helper.PostAPI(cfg.Host+cfg.recognizePath, payload, jwt)
 	if err != nil {
-		newLogger.Error(err.Error())
+		logger.Error("response", "method", method, "err", err, "ms", nil)
 		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
 	}
 
 	result, err := MapResponse(resp)
 	if err != nil {
 		// Handle the error when unmarshalling JSON fails
-		newLogger.Error(err.Error())
+		logger.Error("response", "method", method, "err", err, "ms", nil)
 		code = models.SetErrorCodeMessage(models.BadRequest, err.Error())
 	}
 
 	if result.Code == models.Success {
-		newLogger.DebugArgs("Recognize", "response", result.BasicResponse)
+		logger.Info("response", "method", method, "data", result, "ms", f.time.End())
 		return result
 	} else {
-		newLogger.DebugArgs("Recognize", "response", code)
+		logger.Info("response", "method", method, "data", code, "ms", f.time.End())
 		return response.FaceRegResponse{BasicResponse: code, Data: response.FaceData{
 			CreatedAt: time.Now().Format(time.RFC3339),
 		}}
