@@ -2,7 +2,10 @@ package middleware
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,6 +31,17 @@ func Authentication() gin.HandlerFunc {
 		//c.Set("last_name", claims.Last_name)
 		//c.Set("uid", claims.Uid)
 
+		c.Next()
+	}
+}
+
+const appId = "AiBackend"
+
+func RequestID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		xRequestID := uuid.New().String()
+		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+		c.Set("requestId", xRequestID+"_"+appId+"_"+timestamp)
 		c.Next()
 	}
 }

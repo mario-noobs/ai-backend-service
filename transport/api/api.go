@@ -40,12 +40,22 @@ type api struct {
 	faceBusiness    FaceBusiness
 	profileBusiness ProfileBusiness
 	time            helper.Timer
+	transactionId   string
 }
 
-func (api api) GetProfileHdl() func(*gin.Context) {
+func (api *api) GetProfileHdl() func(*gin.Context) {
 	return func(c *gin.Context) {
+		transactionId, exists := c.Get("requestId")
+		if !exists {
+			logger.Error("response", "method", "GetProfileHdl", "error", "TransactionId is null", "ms", api.time.End())
+			c.JSON(http.StatusOK, gin.H{"error": "TransactionId is null"})
+			return
+		}
+
+		api.transactionId = transactionId.(string)
 		api.time.Start()
-		logger.Info("request", "method", "GetProfileHdl")
+
+		logger.Info("request", "requestId", api.transactionId, "method", "GetProfileHdl")
 		token := c.Request.Header.Get("Authorization")
 		if token == "" {
 			common.WriteErrorResponse(c, errors.New("missing authorization token"))
@@ -60,12 +70,12 @@ func (api api) GetProfileHdl() func(*gin.Context) {
 		resp, err := api.profileBusiness.GetUserProfile(ctx)
 
 		if err != nil {
-			logger.Error("response", "method", "GetProfileHdl", "err", err, "ms", api.time.End())
+			logger.Error("response", "requestId", api.transactionId, "method", "GetProfileHdl", "err", err, "ms", api.time.End())
 			common.WriteErrorResponse(c, err)
 			return
 		}
 
-		logger.Info("response", "method", "GetProfileHdl", "data", resp, "ms", api.time.End())
+		logger.Info("response", "requestId", api.transactionId, "method", "GetProfileHdl", "data", resp, "ms", api.time.End())
 		c.JSON(http.StatusOK, core.ResponseData(resp))
 	}
 }
@@ -82,11 +92,18 @@ func (api *api) LoginHdl() func(*gin.Context) {
 	return func(c *gin.Context) {
 		var data pb.AuthEmailPassword
 		var method = "LoginHdl"
+		transactionId, exists := c.Get("requestId")
+		if !exists {
+			logger.Error("response", "method", "GetProfileHdl", "error", "TransactionId is null", "ms", api.time.End())
+			c.JSON(http.StatusOK, gin.H{"error": "TransactionId is null"})
+			return
+		}
 
+		api.transactionId = transactionId.(string)
 		api.time.Start()
-		logger.Info("request", "method", method)
+		logger.Info("request", "requestId", api.transactionId, "method", method)
 		if err := c.ShouldBind(&data); err != nil {
-			logger.Error("response", "method", method, "error", err, "ms", api.time.End())
+			logger.Error("response", "requestId", api.transactionId, "method", method, "error", err, "ms", api.time.End())
 			common.WriteErrorResponse(c, core.ErrBadRequest.WithError(err.Error()))
 			return
 		}
@@ -94,11 +111,11 @@ func (api *api) LoginHdl() func(*gin.Context) {
 		resp, err := api.authBusiness.Login(c.Request.Context(), &data)
 
 		if err != nil {
-			logger.Error("response", "method", method, "error", err, "ms", api.time.End())
+			logger.Error("response", "requestId", api.transactionId, "method", method, "error", err, "ms", api.time.End())
 			common.WriteErrorResponse(c, err)
 			return
 		}
-
+		logger.Info("response", "requestId", api.transactionId, "method", method, "data", true, "ms", api.time.End())
 		c.JSON(http.StatusOK, core.ResponseData(resp))
 	}
 }
@@ -107,11 +124,17 @@ func (api *api) RegisterHdl() func(*gin.Context) {
 	return func(c *gin.Context) {
 		var data pb.AuthRegister
 		var method = "RegisterHdl"
-
+		transactionId, exists := c.Get("requestId")
+		if !exists {
+			logger.Error("response", "method", "GetProfileHdl", "error", "TransactionId is null", "ms", api.time.End())
+			c.JSON(http.StatusOK, gin.H{"error": "TransactionId is null"})
+			return
+		}
+		api.transactionId = transactionId.(string)
 		api.time.Start()
 		logger.Info("request", "method", method)
 		if err := c.ShouldBind(&data); err != nil {
-			logger.Error("response", "method", method, "error", err, "ms", api.time.End())
+			logger.Error("response", "requestId", api.transactionId, "method", method, "error", err, "ms", api.time.End())
 			common.WriteErrorResponse(c, core.ErrBadRequest.WithError(err.Error()))
 			return
 		}
@@ -119,22 +142,28 @@ func (api *api) RegisterHdl() func(*gin.Context) {
 		_, err := api.authBusiness.Register(c.Request.Context(), &data)
 
 		if err != nil {
-			logger.Error("response", "method", method, "error", err, "ms", api.time.End())
+			logger.Error("response", "requestId", api.transactionId, "method", method, "error", err, "ms", api.time.End())
 			common.WriteErrorResponse(c, err)
 			return
 		}
-		logger.Info("response", "method", method, "data", true, "ms", api.time.End())
+		logger.Info("response", "requestId", api.transactionId, "method", method, "data", true, "ms", api.time.End())
 		c.JSON(http.StatusOK, core.ResponseData(true))
 	}
 }
 func (api *api) RegisterFaceHdl() func(*gin.Context) {
 	return func(c *gin.Context) {
-
+		transactionId, exists := c.Get("requestId")
+		if !exists {
+			logger.Error("response", "method", "GetProfileHdl", "error", "TransactionId is null", "ms", api.time.End())
+			c.JSON(http.StatusOK, gin.H{"error": "TransactionId is null"})
+			return
+		}
+		api.transactionId = transactionId.(string)
 		api.time.Start()
-		logger.Info("request", "method", "RegisterFaceHdl")
+		logger.Info("request", "requestId", api.transactionId, "method", "RegisterFaceHdl")
 		jwtToken, exists := c.Get("token")
 		if !exists {
-			logger.Error("response", "method", "RegisterFaceHdl", "error", "JWT not found", "ms", api.time.End())
+			logger.Error("response", "requestId", api.transactionId, "method", "RegisterFaceHdl", "error", "JWT not found", "ms", api.time.End())
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT not found"})
 			return
 		}
@@ -142,26 +171,32 @@ func (api *api) RegisterFaceHdl() func(*gin.Context) {
 		var data models.Face
 
 		if err := c.ShouldBind(&data); err != nil {
-			logger.Error("response", "method", "RegisterFaceHdl", "error", err, "ms", api.time.End())
+			logger.Error("response", "requestId", api.transactionId, "method", "RegisterFaceHdl", "error", err, "ms", api.time.End())
 			common.WriteErrorResponse(c, core.ErrBadRequest.WithError(err.Error()))
 			return
 		}
 
 		resp := api.faceBusiness.Enroll(c.Request.Context(), data, jwtToken.(string))
-		logger.Info("response", "method", "RegisterFaceHdl", "data", data, "ms", api.time.End())
+		logger.Info("response", "requestId", api.transactionId, "method", "RegisterFaceHdl", "data", data, "ms", api.time.End())
 		c.JSON(http.StatusOK, core.ResponseData(resp))
 	}
 }
 
 func (api *api) RecognizeFaceHdl() func(*gin.Context) {
 	return func(c *gin.Context) {
-
+		transactionId, exists := c.Get("requestId")
+		if !exists {
+			logger.Error("response", "method", "GetProfileHdl", "error", "TransactionId is null", "ms", api.time.End())
+			c.JSON(http.StatusOK, gin.H{"error": "TransactionId is null"})
+			return
+		}
+		api.transactionId = transactionId.(string)
 		api.time.Start()
 
-		logger.Info("request", "method", "RecognizeFaceHdl")
+		logger.Info("request", "requestId", api.transactionId, "method", "RecognizeFaceHdl")
 		jwtToken, exists := c.Get("token")
 		if !exists {
-			logger.Error("response", "method", "RecognizeFaceHdl", "error", "JWT not found", "ms", api.time.End())
+			logger.Error("response", "requestId", api.transactionId, "method", "RecognizeFaceHdl", "error", "JWT not found", "ms", api.time.End())
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT not found"})
 			return
 		}
@@ -169,13 +204,13 @@ func (api *api) RecognizeFaceHdl() func(*gin.Context) {
 		var data models.Face
 
 		if err := c.ShouldBind(&data); err != nil {
-			logger.Error("response", "method", "RecognizeFaceHdl", "error", err, "ms", api.time.End())
+			logger.Error("response", "requestId", api.transactionId, "method", "RecognizeFaceHdl", "error", err, "ms", api.time.End())
 			common.WriteErrorResponse(c, core.ErrBadRequest.WithError(err.Error()))
 			return
 		}
 
 		resp := api.faceBusiness.Recognize(c.Request.Context(), data, jwtToken.(string))
-		logger.Info("response", "method", "RecognizeFaceHdl", "data", data, "ms", api.time.End())
+		logger.Info("response", "requestId", api.transactionId, "method", "RecognizeFaceHdl", "data", data, "ms", api.time.End())
 		c.JSON(http.StatusOK, core.ResponseData(resp))
 	}
 }
