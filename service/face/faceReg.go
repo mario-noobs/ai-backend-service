@@ -38,31 +38,31 @@ func (f FaceBussiness) Enroll(ctx context.Context, face models.Face, jwt string)
 
 	var method = "FaceBussiness_Enroll"
 	f.time.Start()
-	logger.Info("request", "method", method)
+	logger.Info("request", "requestId", face.TransactionId, "method", method)
 
 	cfg := f.config.LoadMarioFaceServiceConfig()
 
 	payload, err := utils.StructToMap(face)
 	if err != nil {
-		logger.Error("response", "method", method, "err", err, "ms", nil)
+		logger.Error("response", "method", method, "requestId", face.TransactionId, "err", err, "ms", nil)
 
 	}
-	logger.DebugContext(ctx, method, "URLs", cfg.Host+cfg.listPath)
+	logger.DebugContext(ctx, method, "URLs", "requestId", face.TransactionId, cfg.Host+cfg.listPath)
 
 	resp, err := helper.PostAPI(cfg.Host+cfg.enrollPath, payload, jwt)
 	if err != nil {
-		logger.Error("response", "method", method, "err", err, "ms", nil)
+		logger.Error("response", "method", method, "requestId", face.TransactionId, "err", err, "ms", nil)
 
 	}
 
 	result, err := MapResponse(resp)
 	if err != nil {
 		// Handle the error when unmarshalling JSON fails
-		logger.Error("response", "method", method, "err", err, "ms", nil)
+		logger.Error("response", "method", method, "requestId", face.TransactionId, "err", err, "ms", nil)
 
 	}
 
-	logger.Info("response", "method", method, "data", result, "ms", f.time.End())
+	logger.Info("response", "method", method, "requestId", face.TransactionId, "data", result, "ms", f.time.End())
 
 	return response.FaceRegResponse{UserId: *face.Name, BasicResponse: result.BasicResponse, Data: response.FaceData{
 		Name:      face.Name,
@@ -73,35 +73,35 @@ func (f FaceBussiness) Enroll(ctx context.Context, face models.Face, jwt string)
 func (f FaceBussiness) Recognize(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse {
 	var method = "FaceBussiness_Enroll"
 	f.time.Start()
-	logger.Info("request", "method", method)
+	logger.Info("request", "method", method, "requestId", face.TransactionId)
 
 	cfg := f.config.LoadMarioFaceServiceConfig()
 	var code = models.BasicResponse{}
 
 	payload, err := utils.StructToMap(face)
 	if err != nil {
-		logger.Error("response", "method", method, "err", err, "ms", nil)
+		logger.Error("response", "method", method, "requestId", face.TransactionId, "err", err, "ms", nil)
 		code = models.SetErrorCodeMessage(models.InvalidParamsErr, err.Error())
 	}
 
 	resp, err := helper.PostAPI(cfg.Host+cfg.recognizePath, payload, jwt)
 	if err != nil {
-		logger.Error("response", "method", method, "err", err, "ms", nil)
+		logger.Error("response", "method", method, "requestId", face.TransactionId, "err", err, "ms", nil)
 		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
 	}
 
 	result, err := MapResponse(resp)
 	if err != nil {
 		// Handle the error when unmarshalling JSON fails
-		logger.Error("response", "method", method, "err", err, "ms", nil)
+		logger.Error("response", "method", method, "requestId", face.TransactionId, "err", err, "ms", nil)
 		code = models.SetErrorCodeMessage(models.BadRequest, err.Error())
 	}
 
 	if result.Code == models.Success {
-		logger.Info("response", "method", method, "data", result, "ms", f.time.End())
+		logger.Info("response", "method", method, "requestId", face.TransactionId, "data", result, "ms", f.time.End())
 		return result
 	} else {
-		logger.Info("response", "method", method, "data", code, "ms", f.time.End())
+		logger.Info("response", "method", method, "requestId", face.TransactionId, "data", code, "ms", f.time.End())
 		return response.FaceRegResponse{BasicResponse: code, Data: response.FaceData{
 			CreatedAt: time.Now().Format(time.RFC3339),
 		}}
