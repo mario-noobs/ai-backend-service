@@ -205,6 +205,8 @@ type AuthEmailPassword struct {
 
 	Email    string `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`       // User's email address.
 	Password string `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"` // User's password.
+	TransactionId string  `protobuf:"bytes,3,opt,name=transaction_id,json=transactionId,proto3" json:"transaction_id,omitempty"`
+
 }
 
 func (x *AuthEmailPassword) Reset() {
