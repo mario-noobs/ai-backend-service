@@ -148,7 +148,7 @@ func (api *api) RegisterFaceHdl() func(*gin.Context) {
 		}
 
 		resp := api.faceBusiness.Enroll(c.Request.Context(), data, jwtToken.(string))
-		logger.Info("response", "method", "RegisterFaceHdl", "data", data, "ms", api.time.End())
+		logger.Info("response", "method", "RegisterFaceHdl", "ms", api.time.End())
 		c.JSON(http.StatusOK, core.ResponseData(resp))
 	}
 }
@@ -175,7 +175,7 @@ func (api *api) RecognizeFaceHdl() func(*gin.Context) {
 		}
 
 		resp := api.faceBusiness.Recognize(c.Request.Context(), data, jwtToken.(string))
-		logger.Info("response", "method", "RecognizeFaceHdl", "data", data, "ms", api.time.End())
+		logger.Info("response", "method", "RecognizeFaceHdl", "ms", api.time.End())
 		c.JSON(http.StatusOK, core.ResponseData(resp))
 	}
 }
