@@ -132,7 +132,6 @@ func (api *api) RegisterHdl() func(*gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"error": "TransactionId is null"})
 			return
 		}
-		data.AuthEmailPassword.TransactionId = transactionId.(string)
 		api.time.Start()
 		logger.Info("request", "method", method)
 		if err := c.ShouldBind(&data); err != nil {
@@ -140,6 +139,8 @@ func (api *api) RegisterHdl() func(*gin.Context) {
 			common.WriteErrorResponse(c, core.ErrBadRequest.WithError(err.Error()))
 			return
 		}
+
+		data.AuthEmailPassword.TransactionId = transactionId.(string)
 
 		_, err := api.authBusiness.Register(c.Request.Context(), &data)
 
