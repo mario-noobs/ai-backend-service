@@ -149,6 +149,32 @@ func (f FaceBussiness) Delete(ctx context.Context, face models.Face, jwt string)
 	}
 }
 
+// IsUserRegistered checks if a face is registered for the given userId
+func (f FaceBussiness) IsUserRegistered(ctx context.Context, userId string, jwt string) (bool, error) {
+	var method = "FaceBussiness_IsUserRegistered"
+	f.time.Start()
+	logger.Info("request", "userId", userId, "method", method)
+
+	cfg := f.config.LoadMarioFaceServiceConfig()
+	params := map[string]string{"userId": userId}
+
+	resp, err := helper.GetAPI(cfg.Host+cfg.registeredPath, params, jwt)
+	if err != nil {
+		logger.Error("response", "method", method, "userId", userId, "err", err, "ms", f.time.End())
+		return false, err
+	}
+	var result struct {
+		Registered bool `json:"registered"`
+	}
+	err = json.Unmarshal(resp, &result)
+	if err != nil {
+		logger.Error("response", "method", method, "userId", userId, "err", err, "ms", f.time.End())
+		return false, err
+	}
+	logger.Info("response", "method", method, "userId", userId, "registered", result.Registered, "ms", f.time.End())
+	return result.Registered, nil
+}
+
 func MapResponse(jsonData []byte) (response.FaceRegResponse, error) {
 
 	type SearchData struct {

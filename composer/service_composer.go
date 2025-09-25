@@ -23,6 +23,7 @@ type FaceServiceHandler interface {
 	RegisterFaceHdl() func(*gin.Context)
 	RecognizeFaceHdl() func(*gin.Context)
 	DeleteFaceHdl() func(*gin.Context)
+	IsRegisteredHdl() func(*gin.Context)
 }
 
 type ProfileHandler interface {

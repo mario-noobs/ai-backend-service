@@ -3,19 +3,20 @@ package api
 import (
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/golang/protobuf/ptypes/empty"
-	sctx "github.com/viettranx/service-context"
-	"github.com/viettranx/service-context/core"
 	"golang-ai-management/common"
 	helper "golang-ai-management/helpers"
 	"golang-ai-management/models"
 	"golang-ai-management/models/response"
 	"golang-ai-management/proto/pb"
-	"google.golang.org/grpc/metadata"
 	"log/slog"
 	"net/http"
 	"os"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang/protobuf/ptypes/empty"
+	sctx "github.com/viettranx/service-context"
+	"github.com/viettranx/service-context/core"
+	"google.golang.org/grpc/metadata"
 )
 
 var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -29,6 +30,7 @@ type FaceBusiness interface {
 	Enroll(ctx context.Context, data models.Face, jwt string) response.FaceRegResponse
 	Recognize(ctx context.Context, data models.Face, jwt string) response.FaceRegResponse
 	Delete(ctx context.Context, data models.Face, jwt string) response.FaceRegResponse
+	IsUserRegistered(ctx context.Context, userId string, jwt string) (bool, error)
 }
 
 type ProfileBusiness interface {
@@ -245,5 +247,27 @@ func (api *api) DeleteFaceHdl() func(*gin.Context) {
 		resp := api.faceBusiness.Delete(c.Request.Context(), data, jwtToken.(string))
 		logger.Info("response", "requestId", transactionId, "method", "DeleteFaceHdl", "data", resp, "ms", api.time.End())
 		c.JSON(http.StatusOK, core.ResponseData(resp))
+	}
+}
+
+func (api *api) IsRegisteredHdl() func(*gin.Context) {
+	return func(c *gin.Context) {
+		userId := c.Query("userId")
+		if userId == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
+			return
+		}
+		jwtToken := ""
+		if v, exists := c.Get("token"); exists {
+			if s, ok := v.(string); ok {
+				jwtToken = s
+			}
+		}
+		registered, err := api.faceBusiness.IsUserRegistered(c.Request.Context(), userId, jwtToken)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"registered": registered})
 	}
 }

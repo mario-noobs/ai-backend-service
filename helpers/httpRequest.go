@@ -8,7 +8,7 @@ import (
 	"net/url"
 )
 
-func GetAPI(endpoint string, params map[string]string) ([]byte, error) {
+func GetAPI(endpoint string, params map[string]string, jwt string) ([]byte, error) {
 	// Create a URL object and add parameters
 	baseURL, err := url.Parse(endpoint)
 	if err != nil {
@@ -22,8 +22,15 @@ func GetAPI(endpoint string, params map[string]string) ([]byte, error) {
 	}
 	baseURL.RawQuery = queryParams.Encode()
 
-	// Make the GET request
-	resp, err := http.Get(baseURL.String())
+	// Prepare the GET request
+	req, err := http.NewRequest("GET", baseURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", jwt)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
