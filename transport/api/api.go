@@ -217,27 +217,33 @@ func (api *api) RecognizeFaceHdl() func(*gin.Context) {
 
 func (api *api) DeleteFaceHdl() func(*gin.Context) {
 	return func(c *gin.Context) {
+		transactionId, exists := c.Get("requestId")
+		if !exists {
+			logger.Error("response", "method", "DeleteFaceHdl", "error", "TransactionId is null", "ms", api.time.End())
+			c.JSON(http.StatusOK, gin.H{"error": "TransactionId is null"})
+			return
+		}
+		var data models.Face
 
+		data.TransactionId = transactionId.(string)
 		api.time.Start()
 
-		logger.Info("request", "method", "DeleteFaceHdl")
+		logger.Info("request", "requestId", transactionId, "method", "DeleteFaceHdl")
 		jwtToken, exists := c.Get("token")
 		if !exists {
-			logger.Error("response", "method", "DeleteFaceHdl", "error", "JWT not found", "ms", api.time.End())
+			logger.Error("response", "requestId", transactionId, "method", "DeleteFaceHdl", "error", "JWT not found", "ms", api.time.End())
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT not found"})
 			return
 		}
 
-		var data models.Face
-
 		if err := c.ShouldBind(&data); err != nil {
-			logger.Error("response", "method", "DeleteFaceHdl", "error", err, "ms", api.time.End())
+			logger.Error("response", "requestId", transactionId, "method", "DeleteFaceHdl", "error", err, "ms", api.time.End())
 			common.WriteErrorResponse(c, core.ErrBadRequest.WithError(err.Error()))
 			return
 		}
 
 		resp := api.faceBusiness.Delete(c.Request.Context(), data, jwtToken.(string))
-		logger.Info("response", "method", "DeleteFaceHdl", "ms", api.time.End())
+		logger.Info("response", "requestId", transactionId, "method", "DeleteFaceHdl", "data", resp, "ms", api.time.End())
 		c.JSON(http.StatusOK, core.ResponseData(resp))
 	}
 }
