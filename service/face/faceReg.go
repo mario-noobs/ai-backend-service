@@ -72,7 +72,7 @@ func (f FaceBussiness) Enroll(ctx context.Context, face models.Face, jwt string)
 }
 
 func (f FaceBussiness) Recognize(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse {
-	var method = "FaceBussiness_Enroll"
+	var method = "FaceBussiness_Recognize"
 	f.time.Start()
 	logger.Info("request", "method", method, "requestId", face.TransactionId)
 
@@ -102,6 +102,7 @@ func (f FaceBussiness) Recognize(ctx context.Context, face models.Face, jwt stri
 		logger.Info("response", "method", method, "requestId", face.TransactionId, "data", result, "ms", f.time.End())
 		return result
 	} else {
+		code = result.BasicResponse
 		logger.Info("response", "method", method, "requestId", face.TransactionId, "data", code, "ms", f.time.End())
 		return response.FaceRegResponse{BasicResponse: code, Data: response.FaceData{
 			CreatedAt: time.Now().Format(time.RFC3339),
@@ -140,6 +141,7 @@ func (f FaceBussiness) Delete(ctx context.Context, face models.Face, jwt string)
 		logger.Info("response", "method", method, "data", result, "ms", f.time.End())
 		return result
 	} else {
+		code = result.BasicResponse
 		logger.Info("response", "method", method, "data", code, "ms", f.time.End())
 		return response.FaceRegResponse{BasicResponse: code, Data: response.FaceData{
 			CreatedAt: time.Now().Format(time.RFC3339),
