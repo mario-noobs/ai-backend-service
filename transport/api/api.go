@@ -28,6 +28,7 @@ type AuthBusiness interface {
 type FaceBusiness interface {
 	Enroll(ctx context.Context, data models.Face, jwt string) response.FaceRegResponse
 	Recognize(ctx context.Context, data models.Face, jwt string) response.FaceRegResponse
+	Delete(ctx context.Context, data models.Face, jwt string) response.FaceRegResponse
 }
 
 type ProfileBusiness interface {
@@ -176,6 +177,33 @@ func (api *api) RecognizeFaceHdl() func(*gin.Context) {
 
 		resp := api.faceBusiness.Recognize(c.Request.Context(), data, jwtToken.(string))
 		logger.Info("response", "method", "RecognizeFaceHdl", "ms", api.time.End())
+		c.JSON(http.StatusOK, core.ResponseData(resp))
+	}
+}
+
+func (api *api) DeleteFaceHdl() func(*gin.Context) {
+	return func(c *gin.Context) {
+
+		api.time.Start()
+
+		logger.Info("request", "method", "DeleteFaceHdl")
+		jwtToken, exists := c.Get("token")
+		if !exists {
+			logger.Error("response", "method", "DeleteFaceHdl", "error", "JWT not found", "ms", api.time.End())
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT not found"})
+			return
+		}
+
+		var data models.Face
+
+		if err := c.ShouldBind(&data); err != nil {
+			logger.Error("response", "method", "DeleteFaceHdl", "error", err, "ms", api.time.End())
+			common.WriteErrorResponse(c, core.ErrBadRequest.WithError(err.Error()))
+			return
+		}
+
+		resp := api.faceBusiness.Delete(c.Request.Context(), data, jwtToken.(string))
+		logger.Info("response", "method", "DeleteFaceHdl", "ms", api.time.End())
 		c.JSON(http.StatusOK, core.ResponseData(resp))
 	}
 }

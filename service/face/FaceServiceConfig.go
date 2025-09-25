@@ -10,6 +10,7 @@ type MarioFaceServiceConfig struct {
 	listPath      string
 	enrollPath    string
 	recognizePath string
+	deletePath    string
 }
 
 func (m MarioFaceServiceConfig) LoadMarioFaceServiceConfig() MarioFaceServiceConfig {
@@ -17,6 +18,7 @@ func (m MarioFaceServiceConfig) LoadMarioFaceServiceConfig() MarioFaceServiceCon
 		listPath:      getEnv("FACE_LIST_API", "get-list"),
 		enrollPath:    getEnv("FACE_ENROLL_API", "register-identity"),
 		recognizePath: getEnv("FACE_RECOGNIZE_API", "recognize-identity"),
+		deletePath:    getEnv("FACE_DELETE_API", "delete-identity"),
 		Host:          getEnv("FACE_HOST", "http://face-reg-engine:8080/face/v1/api/"),
 		LogLevel:      getEnv("FACE_SERVICE_LOG_LEVEL", "info"),
 	}

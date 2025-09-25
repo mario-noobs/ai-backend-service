@@ -84,6 +84,7 @@ func SetupFaceRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {
 
 	router.POST("/register-identity", faceAPIService.RegisterFaceHdl())
 	router.POST("/recognize-identity", faceAPIService.RecognizeFaceHdl())
+	router.POST("/delete-identity", faceAPIService.DeleteFaceHdl())
 }
 
 func SetupProfileRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {

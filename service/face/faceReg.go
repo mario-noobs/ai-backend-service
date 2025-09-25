@@ -24,6 +24,7 @@ func NewFaceBusiness(faceService FaceService, config MarioFaceServiceConfig, tim
 type FaceService interface {
 	Enroll(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse
 	Recognize(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse
+	Delete(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse
 }
 
 type FaceBussiness struct {
@@ -85,6 +86,44 @@ func (f FaceBussiness) Recognize(ctx context.Context, face models.Face, jwt stri
 	}
 
 	resp, err := helper.PostAPI(cfg.Host+cfg.recognizePath, payload, jwt)
+	if err != nil {
+		logger.Error("response", "method", method, "err", err, "ms", nil)
+		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
+	}
+
+	result, err := MapResponse(resp)
+	if err != nil {
+		// Handle the error when unmarshalling JSON fails
+		logger.Error("response", "method", method, "err", err, "ms", nil)
+		code = models.SetErrorCodeMessage(models.BadRequest, err.Error())
+	}
+
+	if result.Code == models.Success {
+		logger.Info("response", "method", method, "data", result, "ms", f.time.End())
+		return result
+	} else {
+		logger.Info("response", "method", method, "data", code, "ms", f.time.End())
+		return response.FaceRegResponse{BasicResponse: code, Data: response.FaceData{
+			CreatedAt: time.Now().Format(time.RFC3339),
+		}}
+	}
+}
+
+func (f FaceBussiness) Delete(ctx context.Context, face models.Face, jwt string) response.FaceRegResponse {
+	var method = "FaceBussiness_Delete"
+	f.time.Start()
+	logger.Info("request", "method", method)
+
+	cfg := f.config.LoadMarioFaceServiceConfig()
+	var code = models.BasicResponse{}
+
+	payload, err := utils.StructToMap(face)
+	if err != nil {
+		logger.Error("response", "method", method, "err", err, "ms", nil)
+		code = models.SetErrorCodeMessage(models.InvalidParamsErr, err.Error())
+	}
+
+	resp, err := helper.PostAPI(cfg.Host+cfg.deletePath, payload, jwt)
 	if err != nil {
 		logger.Error("response", "method", method, "err", err, "ms", nil)
 		code = models.SetErrorCodeMessage(models.NetworkErr, err.Error())
