@@ -1,8 +1,6 @@
 package composer
 
 import (
-	"github.com/gin-gonic/gin"
-	sctx "github.com/viettranx/service-context"
 	"golang-ai-management/common"
 	helper "golang-ai-management/helpers"
 	authService "golang-ai-management/service/auth"
@@ -11,6 +9,9 @@ import (
 	profileService "golang-ai-management/service/profile"
 	authAPI "golang-ai-management/transport/api"
 	profileAPI "golang-ai-management/transport/api"
+
+	"github.com/gin-gonic/gin"
+	sctx "github.com/viettranx/service-context"
 )
 
 type AuthService interface {
@@ -21,6 +22,7 @@ type AuthService interface {
 type FaceServiceHandler interface {
 	RegisterFaceHdl() func(*gin.Context)
 	RecognizeFaceHdl() func(*gin.Context)
+	DeleteFaceHdl() func(*gin.Context)
 }
 
 type ProfileHandler interface {
