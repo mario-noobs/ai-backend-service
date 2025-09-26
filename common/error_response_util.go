@@ -1,10 +1,14 @@
 package common
 
 import (
+	"errors"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/viettranx/service-context/core"
-	"net/http"
 )
+
+var ErrUnauthorized = errors.New("unauthorized")
 
 func WriteErrorResponse(c *gin.Context, err error) {
 	if errSt, ok := err.(core.StatusCodeCarrier); ok {

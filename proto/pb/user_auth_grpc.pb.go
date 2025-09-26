@@ -8,7 +8,7 @@ package pb
 
 import (
 	context "context"
-	"golang-ai-management/proto"
+	pb2 "golang-ai-management/proto"
 
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -22,9 +22,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserAuthService_Login_FullMethodName    = "/pb.UserAuthService/Login"
-	UserAuthService_Register_FullMethodName = "/pb.UserAuthService/Register"
-	UserAuthService_Logout_FullMethodName   = "/pb.UserAuthService/Logout"
+	UserAuthService_Login_FullMethodName        = "/pb.UserAuthService/Login"
+	UserAuthService_Register_FullMethodName     = "/pb.UserAuthService/Register"
+	UserAuthService_Logout_FullMethodName       = "/pb.UserAuthService/Logout"
+	UserAuthService_RefreshToken_FullMethodName = "/pb.UserAuthService/RefreshToken"
 )
 
 // UserAuthServiceClient is the client API for UserAuthService service.
@@ -34,11 +35,13 @@ const (
 // AuthService is the service definition for authentication.
 type UserAuthServiceClient interface {
 	// Login method authenticates a user and returns a token response.
-	Login(ctx context.Context, in *proto.AuthEmailPassword, opts ...grpc.CallOption) (*proto.TokenResponse, error)
+	Login(ctx context.Context, in *pb2.AuthEmailPassword, opts ...grpc.CallOption) (*pb2.TokenResponse, error)
 	// Register method registers a new user.
-	Register(ctx context.Context, in *proto.AuthRegister, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Register(ctx context.Context, in *pb2.AuthRegister, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Logout method revokes/blacklists an access token.
-	Logout(ctx context.Context, in *proto.LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Logout(ctx context.Context, in *pb2.LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// RefreshToken method exchanges a refresh token for new access and refresh tokens.
+	RefreshToken(ctx context.Context, in *pb2.RefreshTokenRequest, opts ...grpc.CallOption) (*pb2.TokenResponse, error)
 }
 
 type userAuthServiceClient struct {
@@ -49,9 +52,9 @@ func NewUserAuthServiceClient(cc grpc.ClientConnInterface) UserAuthServiceClient
 	return &userAuthServiceClient{cc}
 }
 
-func (c *userAuthServiceClient) Login(ctx context.Context, in *proto.AuthEmailPassword, opts ...grpc.CallOption) (*proto.TokenResponse, error) {
+func (c *userAuthServiceClient) Login(ctx context.Context, in *pb2.AuthEmailPassword, opts ...grpc.CallOption) (*pb2.TokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(proto.TokenResponse)
+	out := new(pb2.TokenResponse)
 	err := c.cc.Invoke(ctx, UserAuthService_Login_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -59,7 +62,7 @@ func (c *userAuthServiceClient) Login(ctx context.Context, in *proto.AuthEmailPa
 	return out, nil
 }
 
-func (c *userAuthServiceClient) Register(ctx context.Context, in *proto.AuthRegister, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *userAuthServiceClient) Register(ctx context.Context, in *pb2.AuthRegister, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, UserAuthService_Register_FullMethodName, in, out, cOpts...)
@@ -69,10 +72,20 @@ func (c *userAuthServiceClient) Register(ctx context.Context, in *proto.AuthRegi
 	return out, nil
 }
 
-func (c *userAuthServiceClient) Logout(ctx context.Context, in *proto.LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *userAuthServiceClient) Logout(ctx context.Context, in *pb2.LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, UserAuthService_Logout_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userAuthServiceClient) RefreshToken(ctx context.Context, in *pb2.RefreshTokenRequest, opts ...grpc.CallOption) (*pb2.TokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(pb2.TokenResponse)
+	err := c.cc.Invoke(ctx, UserAuthService_RefreshToken_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -86,11 +99,13 @@ func (c *userAuthServiceClient) Logout(ctx context.Context, in *proto.LogoutRequ
 // AuthService is the service definition for authentication.
 type UserAuthServiceServer interface {
 	// Login method authenticates a user and returns a token response.
-	Login(context.Context, *proto.AuthEmailPassword) (*proto.TokenResponse, error)
+	Login(context.Context, *pb2.AuthEmailPassword) (*pb2.TokenResponse, error)
 	// Register method registers a new user.
-	Register(context.Context, *proto.AuthRegister) (*emptypb.Empty, error)
+	Register(context.Context, *pb2.AuthRegister) (*emptypb.Empty, error)
 	// Logout method revokes/blacklists an access token.
-	Logout(context.Context, *proto.LogoutRequest) (*emptypb.Empty, error)
+	Logout(context.Context, *pb2.LogoutRequest) (*emptypb.Empty, error)
+	// RefreshToken method exchanges a refresh token for new access and refresh tokens.
+	RefreshToken(context.Context, *pb2.RefreshTokenRequest) (*pb2.TokenResponse, error)
 	mustEmbedUnimplementedUserAuthServiceServer()
 }
 
@@ -101,14 +116,17 @@ type UserAuthServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedUserAuthServiceServer struct{}
 
-func (UnimplementedUserAuthServiceServer) Login(context.Context, *proto.AuthEmailPassword) (*proto.TokenResponse, error) {
+func (UnimplementedUserAuthServiceServer) Login(context.Context, *pb2.AuthEmailPassword) (*pb2.TokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedUserAuthServiceServer) Register(context.Context, *proto.AuthRegister) (*emptypb.Empty, error) {
+func (UnimplementedUserAuthServiceServer) Register(context.Context, *pb2.AuthRegister) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
-func (UnimplementedUserAuthServiceServer) Logout(context.Context, *proto.LogoutRequest) (*emptypb.Empty, error) {
+func (UnimplementedUserAuthServiceServer) Logout(context.Context, *pb2.LogoutRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
+}
+func (UnimplementedUserAuthServiceServer) RefreshToken(context.Context, *pb2.RefreshTokenRequest) (*pb2.TokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
 }
 func (UnimplementedUserAuthServiceServer) mustEmbedUnimplementedUserAuthServiceServer() {}
 func (UnimplementedUserAuthServiceServer) testEmbeddedByValue()                         {}
@@ -132,7 +150,7 @@ func RegisterUserAuthServiceServer(s grpc.ServiceRegistrar, srv UserAuthServiceS
 }
 
 func _UserAuthService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(proto.AuthEmailPassword)
+	in := new(pb2.AuthEmailPassword)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -144,13 +162,13 @@ func _UserAuthService_Login_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: UserAuthService_Login_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserAuthServiceServer).Login(ctx, req.(*proto.AuthEmailPassword))
+		return srv.(UserAuthServiceServer).Login(ctx, req.(*pb2.AuthEmailPassword))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _UserAuthService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(proto.AuthRegister)
+	in := new(pb2.AuthRegister)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -162,13 +180,13 @@ func _UserAuthService_Register_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: UserAuthService_Register_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserAuthServiceServer).Register(ctx, req.(*proto.AuthRegister))
+		return srv.(UserAuthServiceServer).Register(ctx, req.(*pb2.AuthRegister))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _UserAuthService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(proto.LogoutRequest)
+	in := new(pb2.LogoutRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -180,7 +198,25 @@ func _UserAuthService_Logout_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: UserAuthService_Logout_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserAuthServiceServer).Logout(ctx, req.(*proto.LogoutRequest))
+		return srv.(UserAuthServiceServer).Logout(ctx, req.(*pb2.LogoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserAuthService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(pb2.RefreshTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserAuthServiceServer).RefreshToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserAuthService_RefreshToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserAuthServiceServer).RefreshToken(ctx, req.(*pb2.RefreshTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -203,6 +239,10 @@ var UserAuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Logout",
 			Handler:    _UserAuthService_Logout_Handler,
+		},
+		{
+			MethodName: "RefreshToken",
+			Handler:    _UserAuthService_RefreshToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

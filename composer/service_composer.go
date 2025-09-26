@@ -18,6 +18,7 @@ type AuthService interface {
 	LoginHdl() func(*gin.Context)
 	RegisterHdl() func(*gin.Context)
 	LogoutHdl() func(*gin.Context)
+	RefreshTokenHdl() func(*gin.Context)
 }
 
 type FaceServiceHandler interface {

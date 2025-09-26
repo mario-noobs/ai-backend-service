@@ -2,12 +2,13 @@ package profile
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"golang-ai-management/common"
 	helper "golang-ai-management/helpers"
 	"golang-ai-management/proto/pb"
 	"log/slog"
 	"os"
+
+	"github.com/pkg/errors"
 )
 
 var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))

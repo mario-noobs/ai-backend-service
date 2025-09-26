@@ -40,6 +40,15 @@ func (r rpcClient) Logout(ctx context.Context, in *proto.LogoutRequest) (*empty.
 	return resp, nil
 }
 
+func (r rpcClient) RefreshToken(ctx context.Context, in *proto.RefreshTokenRequest) (*proto.TokenResponse, error) {
+	resp, err := r.client.RefreshToken(ctx, in)
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return resp, nil
+}
+
 func NewClient(client pb.UserAuthServiceClient) *rpcClient {
 	return &rpcClient{client: client}
 }

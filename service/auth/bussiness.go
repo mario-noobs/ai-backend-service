@@ -13,6 +13,7 @@ type AuthService interface {
 	Login(ctx context.Context, in *proto.AuthEmailPassword) (*proto.TokenResponse, error)
 	Register(ctx context.Context, in *proto.AuthRegister) (*empty.Empty, error)
 	Logout(ctx context.Context, in *proto.LogoutRequest) (*empty.Empty, error)
+	RefreshToken(ctx context.Context, in *proto.RefreshTokenRequest) (*proto.TokenResponse, error)
 }
 
 type Hasher interface {
@@ -47,6 +48,15 @@ func (b business) Register(ctx context.Context, in *proto.AuthRegister) (*empty.
 
 func (b business) Logout(ctx context.Context, in *proto.LogoutRequest) (*empty.Empty, error) {
 	resp, err := b.authService.Logout(ctx, in)
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return resp, nil
+}
+
+func (b *business) RefreshToken(ctx context.Context, in *proto.RefreshTokenRequest) (*proto.TokenResponse, error) {
+	resp, err := b.authService.RefreshToken(ctx, in)
 
 	if err != nil {
 		return nil, errors.WithStack(err)

@@ -78,6 +78,7 @@ func SetupUserRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {
 	router.POST("/authenticate", authAPIService.LoginHdl())
 	router.POST("/register", authAPIService.RegisterHdl())
 	router.POST("/logout", authAPIService.LogoutHdl())
+	router.POST("/refresh", authAPIService.RefreshTokenHdl())
 }
 
 func SetupFaceRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {

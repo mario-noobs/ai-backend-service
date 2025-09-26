@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"golang-ai-management/common"
 	helper "golang-ai-management/helpers"
 	"golang-ai-management/models"
@@ -12,6 +11,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -26,6 +26,7 @@ type AuthBusiness interface {
 	Login(ctx context.Context, data *proto.AuthEmailPassword) (*proto.TokenResponse, error)
 	Register(ctx context.Context, in *proto.AuthRegister) (*empty.Empty, error)
 	Logout(ctx context.Context, data *proto.LogoutRequest) (*empty.Empty, error)
+	RefreshToken(ctx context.Context, data *proto.RefreshTokenRequest) (*proto.TokenResponse, error)
 }
 
 type FaceBusiness interface {
@@ -61,7 +62,8 @@ func (api *api) GetProfileHdl() func(*gin.Context) {
 		logger.Info("request", "requestId", transactionId, "method", "GetProfileHdl")
 		token := c.Request.Header.Get("Authorization")
 		if token == "" {
-			common.WriteErrorResponse(c, errors.New("missing authorization token"))
+			logger.Error("response", "requestId", transactionId, "method", "GetProfileHdl", "error", "JWT not found", "ms", api.time.End())
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT not found"})
 			return
 		}
 		// Step 2: Create metadata with the token
@@ -74,8 +76,15 @@ func (api *api) GetProfileHdl() func(*gin.Context) {
 
 		if err != nil {
 			logger.Error("response", "requestId", transactionId, "method", "GetProfileHdl", "err", err, "ms", api.time.End())
-			common.WriteErrorResponse(c, err)
-			return
+			errMsg := err.Error()
+			if errMsg == "invalid token" ||
+				strings.Contains(errMsg, "invalid token") {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication failed: " + errMsg})
+				return
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user profile: " + errMsg})
+				return
+			}
 		}
 
 		logger.Info("response", "requestId", transactionId, "method", "GetProfileHdl", "data", resp, "ms", api.time.End())
@@ -169,22 +178,19 @@ func (api *api) LogoutHdl() func(*gin.Context) {
 		api.time.Start()
 		logger.Info("request", "method", method)
 
-		// Get the token from middleware or request header
-		jwtToken, exists := c.Get("token")
-		if !exists {
+		tokenStr := c.Request.Header.Get("Authorization")
+		if tokenStr == "" {
 			logger.Error("response", "requestId", transactionId, "method", method, "error", "JWT not found", "ms", api.time.End())
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT token required for logout"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT not found"})
 			return
 		}
 
-		tokenStr := jwtToken.(string)
 		// Remove "Bearer " prefix if present (middleware passes full Authorization header)
 		if len(tokenStr) > 7 && tokenStr[:7] == "Bearer " {
 			tokenStr = tokenStr[7:]
 		}
-		//
-		//data.Token = tokenStr
-		//data.TransactionId = transactionId.(string)
+
+		data.AccessToken = tokenStr
 
 		_, err := api.authBusiness.Logout(c.Request.Context(), &data)
 
@@ -195,6 +201,37 @@ func (api *api) LogoutHdl() func(*gin.Context) {
 		}
 		logger.Info("response", "requestId", transactionId, "method", method, "data", "logout successful", "ms", api.time.End())
 		c.JSON(http.StatusOK, core.ResponseData(gin.H{"message": "logout successful"}))
+	}
+}
+
+func (api *api) RefreshTokenHdl() func(*gin.Context) {
+	return func(c *gin.Context) {
+		var data proto.RefreshTokenRequest
+		var method = "RefreshTokenHdl"
+		transactionId, exists := c.Get("requestId")
+		if !exists {
+			logger.Error("response", "method", method, "error", "TransactionId is null", "ms", api.time.End())
+			c.JSON(http.StatusOK, gin.H{"error": "TransactionId is null"})
+			return
+		}
+		api.time.Start()
+		logger.Info("request", "method", method)
+
+		if err := c.ShouldBind(&data); err != nil {
+			logger.Error("response", "requestId", transactionId, "method", method, "error", err, "ms", api.time.End())
+			common.WriteErrorResponse(c, core.ErrBadRequest.WithError(err.Error()))
+			return
+		}
+
+		resp, err := api.authBusiness.RefreshToken(c.Request.Context(), &data)
+
+		if err != nil {
+			logger.Error("response", "requestId", transactionId, "method", method, "error", err, "ms", api.time.End())
+			common.WriteErrorResponse(c, err)
+			return
+		}
+		logger.Info("response", "requestId", transactionId, "method", method, "data", "tokens refreshed", "ms", api.time.End())
+		c.JSON(http.StatusOK, core.ResponseData(resp))
 	}
 }
 
@@ -303,13 +340,12 @@ func (api *api) IsRegisteredHdl() func(*gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
 			return
 		}
-		jwtToken := ""
-		if v, exists := c.Get("token"); exists {
-			if s, ok := v.(string); ok {
-				jwtToken = s
-			}
+		jwtToken, exists := c.Get("token")
+		if !exists || jwtToken == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT not found"})
+			return
 		}
-		registered, err := api.faceBusiness.IsUserRegistered(c.Request.Context(), userId, jwtToken)
+		registered, err := api.faceBusiness.IsUserRegistered(c.Request.Context(), userId, jwtToken.(string))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
