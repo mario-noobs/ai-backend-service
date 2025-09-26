@@ -7,6 +7,7 @@ import (
 	helper "golang-ai-management/helpers"
 	"golang-ai-management/models"
 	"golang-ai-management/models/response"
+	"golang-ai-management/proto"
 	"golang-ai-management/proto/pb"
 	"log/slog"
 	"net/http"
@@ -22,8 +23,9 @@ import (
 var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 type AuthBusiness interface {
-	Login(ctx context.Context, data *pb.AuthEmailPassword) (*pb.TokenResponse, error)
-	Register(ctx context.Context, in *pb.AuthRegister) (*empty.Empty, error)
+	Login(ctx context.Context, data *proto.AuthEmailPassword) (*proto.TokenResponse, error)
+	Register(ctx context.Context, in *proto.AuthRegister) (*empty.Empty, error)
+	Logout(ctx context.Context, data *proto.LogoutRequest) (*empty.Empty, error)
 }
 
 type FaceBusiness interface {
@@ -91,7 +93,7 @@ func NewProfileAPI(serviceCtx sctx.ServiceContext, business ProfileBusiness) *ap
 
 func (api *api) LoginHdl() func(*gin.Context) {
 	return func(c *gin.Context) {
-		var data pb.AuthEmailPassword
+		var data proto.AuthEmailPassword
 		var method = "LoginHdl"
 		transactionId, exists := c.Get("requestId")
 		if !exists {
@@ -124,7 +126,7 @@ func (api *api) LoginHdl() func(*gin.Context) {
 
 func (api *api) RegisterHdl() func(*gin.Context) {
 	return func(c *gin.Context) {
-		var data pb.AuthRegister
+		var data proto.AuthRegister
 		var method = "RegisterHdl"
 		transactionId, exists := c.Get("requestId")
 		if !exists {
@@ -153,6 +155,49 @@ func (api *api) RegisterHdl() func(*gin.Context) {
 		c.JSON(http.StatusOK, core.ResponseData(true))
 	}
 }
+
+func (api *api) LogoutHdl() func(*gin.Context) {
+	return func(c *gin.Context) {
+		var data proto.LogoutRequest
+		var method = "LogoutHdl"
+		transactionId, exists := c.Get("requestId")
+		if !exists {
+			logger.Error("response", "method", method, "error", "TransactionId is null", "ms", api.time.End())
+			c.JSON(http.StatusOK, gin.H{"error": "TransactionId is null"})
+			return
+		}
+		api.time.Start()
+		logger.Info("request", "method", method)
+
+		// Get the token from middleware or request header
+		jwtToken, exists := c.Get("token")
+		if !exists {
+			logger.Error("response", "requestId", transactionId, "method", method, "error", "JWT not found", "ms", api.time.End())
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT token required for logout"})
+			return
+		}
+
+		tokenStr := jwtToken.(string)
+		// Remove "Bearer " prefix if present (middleware passes full Authorization header)
+		if len(tokenStr) > 7 && tokenStr[:7] == "Bearer " {
+			tokenStr = tokenStr[7:]
+		}
+		//
+		//data.Token = tokenStr
+		//data.TransactionId = transactionId.(string)
+
+		_, err := api.authBusiness.Logout(c.Request.Context(), &data)
+
+		if err != nil {
+			logger.Error("response", "requestId", transactionId, "method", method, "error", err, "ms", api.time.End())
+			common.WriteErrorResponse(c, err)
+			return
+		}
+		logger.Info("response", "requestId", transactionId, "method", method, "data", "logout successful", "ms", api.time.End())
+		c.JSON(http.StatusOK, core.ResponseData(gin.H{"message": "logout successful"}))
+	}
+}
+
 func (api *api) RegisterFaceHdl() func(*gin.Context) {
 	return func(c *gin.Context) {
 		transactionId, exists := c.Get("requestId")

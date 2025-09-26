@@ -2,16 +2,18 @@ package auth
 
 import (
 	"context"
+	"golang-ai-management/proto"
+	"golang-ai-management/proto/pb"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
-	"golang-ai-management/proto/pb"
 )
 
 type rpcClient struct {
 	client pb.UserAuthServiceClient
 }
 
-func (r rpcClient) Login(ctx context.Context, in *pb.AuthEmailPassword) (*pb.TokenResponse, error) {
+func (r rpcClient) Login(ctx context.Context, in *proto.AuthEmailPassword) (*proto.TokenResponse, error) {
 	resp, err := r.client.Login(ctx, in)
 
 	if err != nil {
@@ -20,8 +22,17 @@ func (r rpcClient) Login(ctx context.Context, in *pb.AuthEmailPassword) (*pb.Tok
 	return resp, nil
 }
 
-func (r rpcClient) Register(ctx context.Context, in *pb.AuthRegister) (*empty.Empty, error) {
+func (r rpcClient) Register(ctx context.Context, in *proto.AuthRegister) (*empty.Empty, error) {
 	resp, err := r.client.Register(ctx, in)
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return resp, nil
+}
+
+func (r rpcClient) Logout(ctx context.Context, in *proto.LogoutRequest) (*empty.Empty, error) {
+	resp, err := r.client.Logout(ctx, in)
 
 	if err != nil {
 		return nil, errors.WithStack(err)

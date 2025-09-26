@@ -2,15 +2,17 @@ package auth
 
 import (
 	"context"
+	"golang-ai-management/common"
+	"golang-ai-management/proto"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
-	"golang-ai-management/common"
-	"golang-ai-management/proto/pb"
 )
 
 type AuthService interface {
-	Login(ctx context.Context, in *pb.AuthEmailPassword) (*pb.TokenResponse, error)
-	Register(ctx context.Context, in *pb.AuthRegister) (*empty.Empty, error)
+	Login(ctx context.Context, in *proto.AuthEmailPassword) (*proto.TokenResponse, error)
+	Register(ctx context.Context, in *proto.AuthRegister) (*empty.Empty, error)
+	Logout(ctx context.Context, in *proto.LogoutRequest) (*empty.Empty, error)
 }
 
 type Hasher interface {
@@ -25,7 +27,7 @@ type business struct {
 	hasher      Hasher
 }
 
-func (b business) Login(ctx context.Context, data *pb.AuthEmailPassword) (*pb.TokenResponse, error) {
+func (b business) Login(ctx context.Context, data *proto.AuthEmailPassword) (*proto.TokenResponse, error) {
 	resp, err := b.authService.Login(ctx, data)
 
 	if err != nil {
@@ -34,8 +36,17 @@ func (b business) Login(ctx context.Context, data *pb.AuthEmailPassword) (*pb.To
 	return resp, nil
 }
 
-func (b business) Register(ctx context.Context, in *pb.AuthRegister) (*empty.Empty, error) {
+func (b business) Register(ctx context.Context, in *proto.AuthRegister) (*empty.Empty, error) {
 	resp, err := b.authService.Register(ctx, in)
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return resp, nil
+}
+
+func (b business) Logout(ctx context.Context, in *proto.LogoutRequest) (*empty.Empty, error) {
+	resp, err := b.authService.Logout(ctx, in)
 
 	if err != nil {
 		return nil, errors.WithStack(err)

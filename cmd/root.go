@@ -15,7 +15,7 @@ import (
 	"github.com/viettranx/service-context/component/ginc"
 	smdlw "github.com/viettranx/service-context/component/ginc/middleware"
 	"github.com/viettranx/service-context/component/gormc"
-	"github.com/viettranx/service-context/component/jwtc"
+	// Removed jwtc import - not needed in ai-backend-service
 )
 
 func newServiceCtx() sctx.ServiceContext {
@@ -23,7 +23,7 @@ func newServiceCtx() sctx.ServiceContext {
 		sctx.WithName("Coordinate Server"),
 		sctx.WithComponent(ginc.NewGin(common.KeyCompGIN)),
 		sctx.WithComponent(gormc.NewGormDB(common.KeyCompMySQL, "")),
-		sctx.WithComponent(jwtc.NewJWT(common.KeyCompJWT)),
+		// Removed JWT component - all JWT logic handled by auth-service
 		sctx.WithComponent(NewConfig()),
 	)
 }
@@ -77,7 +77,7 @@ func SetupUserRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {
 
 	router.POST("/authenticate", authAPIService.LoginHdl())
 	router.POST("/register", authAPIService.RegisterHdl())
-	router.POST("/logout", authAPIService.LoginHdl())
+	router.POST("/logout", authAPIService.LogoutHdl())
 }
 
 func SetupFaceRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {

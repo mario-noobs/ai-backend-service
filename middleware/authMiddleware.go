@@ -1,35 +1,29 @@
 package middleware
 
 import (
-	"fmt"
-	"github.com/google/uuid"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/gin-gonic/gin"
 )
 
+// Authentication middleware for ai-backend-service
+// This service doesn't validate JWT tokens directly - it relies on auth-service via gRPC
 func Authentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		clientToken := c.Request.Header.Get("Authorization")
 		if clientToken == "" {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("No Authorization header provided")})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "No Authorization header provided"})
 			c.Abort()
 			return
 		}
 
-		//claims, err := helper.ValidateToken(clientToken)
-		//if err != "" {
-		//	c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		//	c.Abort()
-		//	return
-		//}
-		//
+		// TODO: Call auth-service via gRPC to validate token and get user info
+		// For now, just pass the token through
 		c.Set("token", clientToken)
-		//c.Set("first_name", claims.First_name)
-		//c.Set("last_name", claims.Last_name)
-		//c.Set("uid", claims.Uid)
 
 		c.Next()
 	}

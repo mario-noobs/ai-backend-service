@@ -17,6 +17,7 @@ import (
 type AuthService interface {
 	LoginHdl() func(*gin.Context)
 	RegisterHdl() func(*gin.Context)
+	LogoutHdl() func(*gin.Context)
 }
 
 type FaceServiceHandler interface {
@@ -31,8 +32,6 @@ type ProfileHandler interface {
 }
 
 func ComposeAuthAPIService(serviceCtx sctx.ServiceContext) AuthService {
-	jwtComp := serviceCtx.MustGet(common.KeyCompJWT).(common.JWTProvider)
-
 	auth := authService.NewClient(ComposeUserAuthRPCClient(serviceCtx))
 
 	hasher := new(common.Hasher)
@@ -41,7 +40,8 @@ func ComposeAuthAPIService(serviceCtx sctx.ServiceContext) AuthService {
 	faceService := new(faceBusiness.FaceService)
 	faceServiceConfig := new(faceBusiness.MarioFaceServiceConfig)
 
-	authBiz := authService.NewBusiness(auth, jwtComp, hasher)
+	// Pass nil JWT provider - auth-service handles all JWT logic via gRPC
+	authBiz := authService.NewBusiness(auth, nil, hasher)
 
 	faceBiz := faceBusiness.NewFaceBusiness(*faceService, *faceServiceConfig, *time)
 
@@ -51,8 +51,6 @@ func ComposeAuthAPIService(serviceCtx sctx.ServiceContext) AuthService {
 }
 
 func ComposeFaceAPIService(serviceCtx sctx.ServiceContext) FaceServiceHandler {
-	jwtComp := serviceCtx.MustGet(common.KeyCompJWT).(common.JWTProvider)
-
 	auth := authService.NewClient(ComposeUserAuthRPCClient(serviceCtx))
 
 	hasher := new(common.Hasher)
@@ -61,7 +59,8 @@ func ComposeFaceAPIService(serviceCtx sctx.ServiceContext) FaceServiceHandler {
 	faceService := new(faceBusiness.FaceService)
 	faceServiceConfig := new(faceBusiness.MarioFaceServiceConfig)
 
-	authBiz := authService.NewBusiness(auth, jwtComp, hasher)
+	// Pass nil JWT provider - auth-service handles all JWT logic via gRPC
+	authBiz := authService.NewBusiness(auth, nil, hasher)
 
 	faceBiz := faceBusiness.NewFaceBusiness(*faceService, *faceServiceConfig, *time)
 
@@ -71,11 +70,10 @@ func ComposeFaceAPIService(serviceCtx sctx.ServiceContext) FaceServiceHandler {
 }
 
 func ComposeProfileAPIService(serviceCtx sctx.ServiceContext) ProfileHandler {
-	jwtComp := serviceCtx.MustGet(common.KeyCompJWT).(common.JWTProvider)
-
 	profile := profileService.NewClient(ComposeProfileRPCClient(serviceCtx))
 
-	profileBiz := profileBusiness.NewBusiness(profile, jwtComp)
+	// Pass nil JWT provider - auth-service handles all JWT logic via gRPC
+	profileBiz := profileBusiness.NewBusiness(profile, nil)
 
 	serviceAPI := profileAPI.NewProfileAPI(serviceCtx, profileBiz)
 
