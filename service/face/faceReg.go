@@ -13,7 +13,21 @@ import (
 	"time"
 )
 
-func NewFaceBusiness(faceService FaceService, config MarioFaceServiceConfig, time helper.Timer) *FaceBussiness {
+// ConfigProvider interface for dependency injection
+type ConfigProvider interface {
+	LoadMarioFaceServiceConfig() MarioFaceServiceConfig
+}
+
+// DefaultConfigProvider implements ConfigProvider using the default config loading
+type DefaultConfigProvider struct {
+	MarioFaceServiceConfig
+}
+
+func (d DefaultConfigProvider) LoadMarioFaceServiceConfig() MarioFaceServiceConfig {
+	return d.MarioFaceServiceConfig.LoadMarioFaceServiceConfig()
+}
+
+func NewFaceBusiness(faceService FaceService, config ConfigProvider, time helper.Timer) *FaceBussiness {
 	return &FaceBussiness{
 		faceService,
 		config,
@@ -29,7 +43,7 @@ type FaceService interface {
 
 type FaceBussiness struct {
 	FaceBussiness FaceService
-	config        MarioFaceServiceConfig
+	config        ConfigProvider // Changed from MarioFaceServiceConfig to ConfigProvider interface
 	time          helper.Timer
 }
 
