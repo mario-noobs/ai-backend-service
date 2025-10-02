@@ -3,10 +3,13 @@ package composer
 import (
 	"golang-ai-management/common"
 	helper "golang-ai-management/helpers"
+	auditService "golang-ai-management/service/audit"
 	authService "golang-ai-management/service/auth"
 	faceBusiness "golang-ai-management/service/face"
 	profileBusiness "golang-ai-management/service/profile"
 	profileService "golang-ai-management/service/profile"
+	"golang-ai-management/service/repository/mysql"
+	auditAPI "golang-ai-management/transport/api"
 	authAPI "golang-ai-management/transport/api"
 	profileAPI "golang-ai-management/transport/api"
 
@@ -30,6 +33,10 @@ type FaceServiceHandler interface {
 
 type ProfileHandler interface {
 	GetProfileHdl() func(*gin.Context)
+}
+
+type AuditHandler interface {
+	ListAuditLogsHdl() func(*gin.Context)
 }
 
 func ComposeAuthAPIService(serviceCtx sctx.ServiceContext) AuthService {
@@ -79,4 +86,21 @@ func ComposeProfileAPIService(serviceCtx sctx.ServiceContext) ProfileHandler {
 	serviceAPI := profileAPI.NewProfileAPI(serviceCtx, profileBiz)
 
 	return serviceAPI
+}
+
+func ComposeAuditLogAPIService(serviceCtx sctx.ServiceContext) AuditHandler {
+	// Get MySQL component from service context
+	mysqlComp := serviceCtx.MustGet(common.KeyCompMySQL).(common.GormComponent)
+	db := mysqlComp.GetDB()
+
+	// Create repository
+	repo := mysql.NewMySQLRepository(db)
+
+	// Create business layer
+	auditBiz := auditService.NewAuditBusiness(repo)
+
+	// Create API layer
+	auditAPIService := auditAPI.NewAuditAPI(serviceCtx, auditBiz)
+
+	return auditAPIService
 }

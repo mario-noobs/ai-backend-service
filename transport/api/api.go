@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"golang-ai-management/common"
 	helper "golang-ai-management/helpers"
 	"golang-ai-management/models"
@@ -21,6 +23,41 @@ import (
 )
 
 var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+// JWT Claims structure to parse the token
+type JWTClaims struct {
+	Sub string `json:"sub"`
+	Exp int64  `json:"exp"`
+	Iat int64  `json:"iat"`
+}
+
+// parseJWTTokenFromAPI extracts claims from JWT token without verification (for audit purposes only)
+func parseJWTTokenFromAPI(tokenString string) (*JWTClaims, error) {
+	// Remove "Bearer " prefix if present
+	if strings.HasPrefix(tokenString, "Bearer ") {
+		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+	}
+
+	// Split JWT token into parts
+	parts := strings.Split(tokenString, ".")
+	if len(parts) != 3 {
+		return nil, nil // Invalid JWT format
+	}
+
+	// Decode payload (second part)
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse JSON claims
+	var claims JWTClaims
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return nil, err
+	}
+
+	return &claims, nil
+}
 
 type AuthBusiness interface {
 	Login(ctx context.Context, data *proto.AuthEmailPassword) (*proto.TokenResponse, error)
@@ -128,6 +165,13 @@ func (api *api) LoginHdl() func(*gin.Context) {
 			common.WriteErrorResponse(c, err)
 			return
 		}
+
+		if resp != nil && resp.AccessToken != nil && resp.AccessToken.Token != "" {
+			if claims, parseErr := parseJWTTokenFromAPI(resp.AccessToken.Token); parseErr == nil && claims != nil {
+				c.Set("audit_user_id", claims.Sub)
+			}
+		}
+
 		logger.Info("response", "requestId", transactionId, "method", method, "data", true, "ms", api.time.End())
 		c.JSON(http.StatusOK, core.ResponseData(resp))
 	}

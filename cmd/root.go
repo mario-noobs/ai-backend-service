@@ -5,6 +5,7 @@ import (
 	"golang-ai-management/common"
 	"golang-ai-management/composer"
 	"golang-ai-management/middleware"
+	"golang-ai-management/models"
 	"net/http"
 	"os"
 	"time"
@@ -15,7 +16,6 @@ import (
 	"github.com/viettranx/service-context/component/ginc"
 	smdlw "github.com/viettranx/service-context/component/ginc/middleware"
 	"github.com/viettranx/service-context/component/gormc"
-	// Removed jwtc import - not needed in ai-backend-service
 )
 
 func newServiceCtx() sctx.ServiceContext {
@@ -26,6 +26,24 @@ func newServiceCtx() sctx.ServiceContext {
 		// Removed JWT component - all JWT logic handled by auth-service
 		sctx.WithComponent(NewConfig()),
 	)
+}
+
+// migrateDatabase ensures all required tables exist
+func migrateDatabase(serviceCtx sctx.ServiceContext) error {
+	// Get MySQL component from service context
+	mysqlComp := serviceCtx.MustGet(common.KeyCompMySQL)
+	gormComp, ok := mysqlComp.(common.GormComponent)
+	if !ok {
+		return fmt.Errorf("failed to cast MySQL component to GormComponent interface")
+	}
+
+	db := gormComp.GetDB()
+	if db == nil {
+		return fmt.Errorf("database connection is nil")
+	}
+
+	// Auto-migrate models
+	return db.AutoMigrate(&models.AuditLog{})
 }
 
 var rootCmd = &cobra.Command{
@@ -43,6 +61,11 @@ var rootCmd = &cobra.Command{
 			logger.Fatal(err)
 		}
 
+		// Ensure database migration
+		if err := migrateDatabase(serviceCtx); err != nil {
+			logger.Fatal("Database migration failed:", err)
+		}
+
 		ginComp := serviceCtx.MustGet(common.KeyCompGIN).(common.GINComponent)
 
 		router := ginComp.GetRouter()
@@ -50,6 +73,7 @@ var rootCmd = &cobra.Command{
 
 		router.Use(middleware.CORSMiddleware())
 		router.Use(middleware.RequestID())
+		router.Use(middleware.AuditLogging(serviceCtx))
 		router.GET("/ping", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"data": "pong"})
 		})
@@ -65,6 +89,10 @@ var rootCmd = &cobra.Command{
 
 		v1Profile := router.Group("/")
 		SetupProfileRoutes(v1Profile, serviceCtx)
+
+		v1Audit := router.Group("/api/v1/audit")
+		v1Audit.Use(middleware.Authentication())
+		SetupAuditLogRoutes(v1Audit, serviceCtx)
 
 		if err := router.Run(fmt.Sprintf(":%d", ginComp.GetPort())); err != nil {
 			logger.Fatal(err)
@@ -94,6 +122,12 @@ func SetupProfileRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext)
 	profileAPIService := composer.ComposeProfileAPIService(serviceCtx)
 
 	router.POST("/profile", profileAPIService.GetProfileHdl())
+}
+
+func SetupAuditLogRoutes(router *gin.RouterGroup, serviceCtx sctx.ServiceContext) {
+	auditLogAPIService := composer.ComposeAuditLogAPIService(serviceCtx)
+
+	router.GET("/all", auditLogAPIService.ListAuditLogsHdl())
 }
 
 func Execute() {
